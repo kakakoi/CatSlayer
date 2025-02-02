@@ -751,10 +751,13 @@ class Game {
         // タッチ入力の状態管理
         this.touchState = {
             isMoving: false,
-            targetX: 0,
-            targetY: 0,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
             lastTapTime: 0,
-            doubleTapDelay: 300 // ダブルタップの判定時間（ミリ秒）
+            doubleTapDelay: 300,
+            joystickRadius: 50 // ジョイスティックの移動半径
         };
 
         // 画面サイズの設定
@@ -769,11 +772,10 @@ class Game {
         // スポナーの初期化（最初は非アクティブ）
         this.setupSpawners();
 
-        // Web Audio APIの初期化
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Web Audio APIの初期化を遅延させる
+        this.audioContext = null;
         this.isMuted = false;
         this.bgmPlaying = false;
-        this.setupAudio();
 
         // ステージ関連の新しいプロパティ
         this.stage = 1;
@@ -858,11 +860,22 @@ class Game {
             this.keys[e.key] = false;
         });
 
-        // タッチ入力の処理を更新
+        // タッチ状態の初期化を更新
+        this.touchState = {
+            isMoving: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            lastTapTime: 0,
+            doubleTapDelay: 300,
+            joystickRadius: 50 // ジョイスティックの移動半径
+        };
+
+        // タッチ開始時の処理を更新
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             
-            // ゲームオーバー時の処理
             if (this.gameState === 'gameover') {
                 this.restart();
                 return;
@@ -883,7 +896,6 @@ class Game {
             // ダブルタップの判定
             const currentTime = Date.now();
             if (currentTime - this.touchState.lastTapTime < this.touchState.doubleTapDelay) {
-                // ダブルタップで攻撃
                 if (!this.player.isAttacking) {
                     this.player.isAttacking = true;
                     this.player.attackTimer = this.player.attackDuration;
@@ -892,13 +904,15 @@ class Game {
             }
             this.touchState.lastTapTime = currentTime;
 
-            // 移動処理の開始
+            // タッチ開始位置を保存
             this.touchState.isMoving = true;
-            this.touchState.targetX = x;
-            this.touchState.targetY = y;
-            this.updatePlayerDirection(x, y);
+            this.touchState.startX = x;
+            this.touchState.startY = y;
+            this.touchState.currentX = x;
+            this.touchState.currentY = y;
         });
 
+        // タッチ移動時の処理を更新
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (!this.touchState.isMoving) return;
@@ -908,9 +922,32 @@ class Game {
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
 
-            this.touchState.targetX = x;
-            this.touchState.targetY = y;
-            this.updatePlayerDirection(x, y);
+            this.touchState.currentX = x;
+            this.touchState.currentY = y;
+            
+            // ジョイスティックの方向計算
+            const dx = x - this.touchState.startX;
+            const dy = y - this.touchState.startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // 移動方向の正規化と閾値の適用
+            if (distance > 10) { // デッドゾーン
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
+                
+                // 8方向の移動に制限
+                this.keys['ArrowRight'] = normalizedDx > 0.5;
+                this.keys['ArrowLeft'] = normalizedDx < -0.5;
+                this.keys['ArrowDown'] = normalizedDy > 0.5;
+                this.keys['ArrowUp'] = normalizedDy < -0.5;
+
+                // プレイヤーの向きを設定
+                if (Math.abs(normalizedDx) > Math.abs(normalizedDy)) {
+                    this.player.direction = normalizedDx > 0 ? 'right' : 'left';
+                } else {
+                    this.player.direction = normalizedDy > 0 ? 'down' : 'up';
+                }
+            }
         });
 
         this.canvas.addEventListener('touchend', (e) => {
@@ -918,30 +955,6 @@ class Game {
             this.touchState.isMoving = false;
             this.resetMovementKeys();
         });
-    }
-
-    // プレイヤーの向きと移動を更新する新しいメソッド
-    updatePlayerDirection(targetX, targetY) {
-        const dx = targetX - (this.player.x + this.player.width/2);
-        const dy = targetY - (this.player.y + this.player.height/2);
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > 5) { // 5ピクセル以上離れている場合のみ移動
-            // 移動方向の設定
-            this.keys['ArrowRight'] = dx > 0;
-            this.keys['ArrowLeft'] = dx < 0;
-            this.keys['ArrowDown'] = dy > 0;
-            this.keys['ArrowUp'] = dy < 0;
-
-            // プレイヤーの向きを設定
-            if (Math.abs(dx) > Math.abs(dy)) {
-                this.player.direction = dx > 0 ? 'right' : 'left';
-            } else {
-                this.player.direction = dy > 0 ? 'down' : 'up';
-            }
-        } else {
-            this.resetMovementKeys();
-        }
     }
 
     // 新しいメソッド：移動キーをリセット
@@ -1098,27 +1111,32 @@ class Game {
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(this.isMuted ? '🔇' : '🔊', this.canvas.width - 25, 30);
-    }
 
-    // グリッド描画を追加
-    drawGrid() {
-        this.ctx.strokeStyle = '#CCCCCC';
-        this.ctx.lineWidth = 0.5;
-
-        // 縦線
-        for (let x = 0; x < this.canvas.width; x += 50) {
+        // 仮想ジョイスティックの描画
+        if (this.touchState.isMoving) {
+            // ジョイスティックの基準円
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.arc(this.touchState.startX, this.touchState.startY, 
+                this.touchState.joystickRadius, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
-        }
 
-        // 横線
-        for (let y = 0; y < this.canvas.height; y += 50) {
+            // スティック部分
+            const dx = this.touchState.currentX - this.touchState.startX;
+            const dy = this.touchState.currentY - this.touchState.startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = this.touchState.joystickRadius;
+            
+            const stickX = this.touchState.startX + 
+                (dx / distance) * Math.min(distance, maxDistance);
+            const stickY = this.touchState.startY + 
+                (dy / distance) * Math.min(distance, maxDistance);
+
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
+            this.ctx.arc(stickX, stickY, 20, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            this.ctx.fill();
         }
     }
 
@@ -1193,16 +1211,33 @@ class Game {
     start() {
         if (!this.isRunning) {
             this.isRunning = true;
-            // オーディオコンテキストの開始（ブラウザの自動再生ポリシーに対応）
-            this.audioContext.resume().then(() => {
-                this.playBGM();
-            });
+            
+            // 最初のユーザー操作時にAudioContextを初期化
+            this.canvas.addEventListener('touchstart', () => {
+                if (!this.audioContext) {
+                    this.setupAudio();
+                    this.playBGM();
+                }
+            }, { once: true });
+            
+            this.canvas.addEventListener('click', () => {
+                if (!this.audioContext) {
+                    this.setupAudio();
+                    this.playBGM();
+                }
+            }, { once: true });
+
             this.gameLoop(0);
         }
     }
 
     // オーディオシステムのセットアップ
     setupAudio() {
+        // ユーザーのジェスチャー後に初期化
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
         // マスターボリューム
         this.masterGain = this.audioContext.createGain();
         this.masterGain.gain.value = 0.3;
@@ -1372,7 +1407,7 @@ class Game {
 
     // BGMの生成と再生
     playBGM() {
-        if (this.bgmPlaying) return;
+        if (!this.audioContext || this.bgmPlaying) return;
         this.bgmPlaying = true;
 
         const playNote = (frequency, startTime, duration) => {
@@ -1423,7 +1458,7 @@ class Game {
     }
 
     playSound(soundName) {
-        if (this.isMuted) return;
+        if (!this.audioContext || this.isMuted) return;
 
         switch (soundName) {
             case 'coin':
@@ -1483,6 +1518,28 @@ class Game {
 
         // ステージクリア音を再生
         this.playSound('stageClear');
+    }
+
+    // drawGridメソッドを追加
+    drawGrid() {
+        this.ctx.strokeStyle = '#CCCCCC';
+        this.ctx.lineWidth = 0.5;
+
+        // 縦線
+        for (let x = 0; x < this.canvas.width; x += 50) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.stroke();
+        }
+
+        // 横線
+        for (let y = 0; y < this.canvas.height; y += 50) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.stroke();
+        }
     }
 }
 
