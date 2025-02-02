@@ -1187,14 +1187,25 @@ class Game {
         this.enemies = [];
         this.coins = [];
         
-        this.spawners.forEach(spawner => {
+        // スポナーの完全な再初期化
+        this.spawners.forEach((spawner, index) => {
             spawner.active = false;
-            spawner.lastSpawnTime = 0;
+            spawner.lastSpawnTime = Date.now() + (index * 500);
             spawner.spawnInterval = 2000;
             spawner.maxEnemiesAlive = 5;
+            spawner.enemyCount = 0;
+            spawner.spawnedEnemies = [];
+            spawner.progress = 0;
+            
+            // 段階的に起動
+            setTimeout(() => {
+                spawner.active = true;
+            }, 2000 + index * 500);
         });
 
-        this.playBGM();
+        if (this.audioContext) {
+            this.playBGM();
+        }
     }
 
     // ゲームループ
