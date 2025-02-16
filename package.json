@@ -14,10 +14,12 @@
         "health-check": "node scripts/health-check.js"
     },
     "lint-staged": {
-        "src/**/*.ts": [
+        "{src,scripts}/**/*.{ts,js}": [
             "biome format",
             "biome lint",
-            "biome check",
+            "biome check"
+        ],
+        "src/**/*.ts": [
             "bash -c 'tsc --noEmit'"
         ]
     },

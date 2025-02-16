@@ -1,8 +1,8 @@
-import fetch from 'node-fetch';
+import { spawn } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import fetch from 'node-fetch';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TIMEOUT = 30000; // 30秒のタイムアウト
@@ -17,7 +17,7 @@ async function waitForServer(url, timeout) {
                 return true;
             }
         } catch (error) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
         }
     }
     throw new Error(`Server did not respond within ${timeout}ms`);
@@ -30,7 +30,7 @@ async function runHealthCheck() {
         server = spawn('npm', ['run', 'preview'], {
             stdio: 'pipe',
             shell: true,
-            cwd: resolve(__dirname, '..')
+            cwd: resolve(__dirname, '..'),
         });
 
         // サーバーの起動を待機
@@ -46,20 +46,20 @@ async function runHealthCheck() {
         const checks = [
             {
                 test: () => document.querySelector('canvas#gameCanvas'),
-                message: 'Canvas element not found'
+                message: 'Canvas element not found',
             },
             {
                 test: () => document.querySelector('script[type="module"]'),
-                message: 'Module script not found'
+                message: 'Module script not found',
             },
             {
                 test: () => !html.includes('Error:'),
-                message: 'Error found in HTML content'
+                message: 'Error found in HTML content',
             },
             {
                 test: () => response.status === 200,
-                message: 'Page did not return 200 status'
-            }
+                message: 'Page did not return 200 status',
+            },
         ];
 
         // チェックの実行
@@ -82,4 +82,4 @@ async function runHealthCheck() {
     }
 }
 
-runHealthCheck(); 
+runHealthCheck();
