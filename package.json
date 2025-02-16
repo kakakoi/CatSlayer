@@ -9,16 +9,11 @@
         "preview": "vite preview",
         "format": "biome format --write .",
         "lint": "biome lint .",
-        "check": "biome check --apply .",
+        "check": "biome check --write .",
         "prepare": "husky"
     },
     "lint-staged": {
-        "src/**/*.ts": [
-            "biome format",
-            "biome lint",
-            "biome check",
-            "bash -c 'tsc --noEmit'"
-        ]
+        "src/**/*.ts": ["biome format", "biome lint", "biome check", "bash -c 'tsc --noEmit'"]
     },
     "repository": {
         "type": "git",
