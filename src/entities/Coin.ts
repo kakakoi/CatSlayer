@@ -1,9 +1,9 @@
-import { ICoin } from '../types.js';
+import type { ICoin } from '../types.js';
 import { GameObject } from './GameObject.js';
 
 export class Coin extends GameObject implements ICoin {
-    public collected: boolean = false;
-    public value: number = 10;
+    public collected = false;
+    public value = 10;
     public animationOffset: number;
 
     constructor(x: number, y: number) {

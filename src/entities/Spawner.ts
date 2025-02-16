@@ -1,9 +1,9 @@
-import { IGame, ISpawner, IEnemy, EnemyType } from '../types.js';
+import type { IGame, ISpawner, IEnemy, EnemyType } from '../types.js';
 import { GameObject } from './GameObject.js';
 import { Enemy } from './Enemy.js';
 
 export class Spawner extends GameObject implements ISpawner {
-    public id: number = 0;
+    public id = 0;
     public lastSpawnTime: number;
     public active: boolean;
     public radius: number;
@@ -12,11 +12,18 @@ export class Spawner extends GameObject implements ISpawner {
     public enemyCount: number;
     public spawnedEnemies: IEnemy[];
     public spawnEffect: number;
+    private game: IGame;
 
-    constructor(x: number, y: number, public spawnInterval: number = 3000) {
+    constructor(
+        game: IGame,
+        x: number,
+        y: number,
+        public spawnInterval = 3000
+    ) {
         super(x, y, 40, 40);
+        this.game = game;
         this.lastSpawnTime = Date.now();
-        this.active = false;
+        this.active = true;
         this.radius = 25;
         this.progress = 0;
         this.maxEnemiesAlive = 5;

@@ -1,4 +1,4 @@
-import { IGame, IEnemy, EnemyType, MovePattern } from '../types.js';
+import type { IGame, IEnemy, EnemyType, MovePattern } from '../types.js';
 import { GameObject } from './GameObject.js';
 
 export class Enemy extends GameObject implements IEnemy {
@@ -14,7 +14,7 @@ export class Enemy extends GameObject implements IEnemy {
     public scoreValue: number;
     public color: string;
     public movePattern: MovePattern;
-    public spawnerId: number = 0;
+    public spawnerId = 0;
     public direction: number;
     public zigzagAngle: number;
     public directionChangeTimer: number;

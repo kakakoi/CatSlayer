@@ -29,12 +29,12 @@ export class Game implements IGame {
     public enemies: Enemy[] = [];
     public coins: Coin[] = [];
     public spawners: Spawner[] = [];
-    public isRunning: boolean = false;
+    public isRunning = false;
     public gameState: GameState = 'playing';
-    public score: number = 0;
-    public stage: number = 1;
-    public startTime: number = Date.now();
-    public stageTime: number = 60;
+    public score = 0;
+    public stage = 1;
+    public startTime = Date.now();
+    public stageTime = 60;
     public remainingTime: number = this.stageTime;
     public nextStageStartTime: number = 0;
     public touchState: TouchState;

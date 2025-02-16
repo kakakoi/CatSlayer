@@ -2,7 +2,7 @@
 const canvas = document.createElement('canvas');
 const sizes = [16, 32, 192, 512];
 
-sizes.forEach(size => {
+for (const size of sizes) {
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -78,7 +78,7 @@ sizes.forEach(size => {
     link.download = fileName;
     link.href = canvas.toDataURL('image/png');
     link.click();
-});
+}
 
 // .icoファイル用（16x16）
 canvas.width = 16;
