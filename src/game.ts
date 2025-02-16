@@ -1,18 +1,17 @@
 import {
-    IGame,
-    IGameObject,
-    ICoin,
-    IEnemy,
-    IPlayer,
-    ISpawner,
-    GameState,
-    TouchState,
-    KeyState,
+    type IGame,
+    type IGameObject,
+    type ICoin,
+    type IEnemy,
+    type IPlayer,
+    type ISpawner,
+    type GameState,
+    type TouchState,
+    type KeyState,
     Direction,
     PlayerColors,
-    SoundName,
-    EnemyType,
-    MovePattern
+    type EnemyType,
+    type MovePattern,
 } from './types.js';
 import { Player } from './entities/Player.js';
 import { Enemy } from './entities/Enemy.js';
@@ -36,7 +35,7 @@ export class Game implements IGame {
     public startTime = Date.now();
     public stageTime = 60;
     public remainingTime: number = this.stageTime;
-    public nextStageStartTime: number = 0;
+    public nextStageStartTime = 0;
     public touchState: TouchState;
     private audioManager: AudioManager;
 
@@ -85,10 +84,10 @@ export class Game implements IGame {
 
         // スポナーをより外側に配置
         this.spawners = [
-            new Spawner(centerX - offsetX, centerY - offsetY, 2000), // 左上
-            new Spawner(centerX + offsetX, centerY - offsetY, 2000), // 右上
-            new Spawner(centerX - offsetX, centerY + offsetY, 2000), // 左下
-            new Spawner(centerX + offsetX, centerY + offsetY, 2000), // 右下
+            new Spawner(this, centerX - offsetX, centerY - offsetY, 2000), // 左上
+            new Spawner(this, centerX + offsetX, centerY - offsetY, 2000), // 右上
+            new Spawner(this, centerX - offsetX, centerY + offsetY, 2000), // 左下
+            new Spawner(this, centerX + offsetX, centerY + offsetY, 2000), // 右下
         ];
 
         // スポナーにIDを付与

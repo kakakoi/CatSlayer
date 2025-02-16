@@ -1,4 +1,4 @@
-import { IGame, IPlayer, IEnemy, Direction, PlayerColors } from '../types.js';
+import type { IGame, IPlayer, IEnemy, Direction, PlayerColors } from '../types.js';
 import { GameObject } from './GameObject.js';
 
 export class Player extends GameObject implements IPlayer {
@@ -317,7 +317,7 @@ export class Player extends GameObject implements IPlayer {
         if (distance > this.attackRange) return false;
 
         // 攻撃方向に応じた判定
-        let attackAngle;
+        let attackAngle: number;
         switch (this.direction) {
             case 'right':
                 attackAngle = 0;

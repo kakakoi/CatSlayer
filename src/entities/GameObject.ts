@@ -1,4 +1,4 @@
-import { IGameObject } from '../types.js';
+import type { IGameObject } from '../types.js';
 
 // ゲームオブジェクトの基本クラス
 export class GameObject implements IGameObject {

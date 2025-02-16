@@ -1,10 +1,10 @@
-import { SoundName } from '../types';
+import type { SoundName } from '../types';
 
 export class AudioManager {
     private audioContext: AudioContext | null = null;
     private masterGain: GainNode | null = null;
-    private isMuted: boolean = false;
-    private bgmPlaying: boolean = false;
+    private isMuted = false;
+    private bgmPlaying = false;
 
     private coinSound: () => void = () => {};
     private enemyDeathSound: () => void = () => {};
