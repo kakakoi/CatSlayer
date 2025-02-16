@@ -867,14 +867,18 @@ class Game implements IGame {
 
     // スポナーのセットアップを別メソッドに分離
     setupSpawners(): void {
-        const margin = 100;
+        // キャンバスの中央を基準に配置
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const offsetX = this.canvas.width * 0.35; // 横方向のオフセット
+        const offsetY = this.canvas.height * 0.35; // 縦方向のオフセット
 
-        // スポナーを4つの角に配置
+        // スポナーをより外側に配置
         this.spawners = [
-            new Spawner(margin, margin, 2000),
-            new Spawner(this.canvas.width - margin - 40, margin, 2000),
-            new Spawner(margin, this.canvas.height - margin - 40, 2000),
-            new Spawner(this.canvas.width - margin - 40, this.canvas.height - margin - 40, 2000),
+            new Spawner(centerX - offsetX, centerY - offsetY, 2000), // 左上
+            new Spawner(centerX + offsetX, centerY - offsetY, 2000), // 右上
+            new Spawner(centerX - offsetX, centerY + offsetY, 2000), // 左下
+            new Spawner(centerX + offsetX, centerY + offsetY, 2000), // 右下
         ];
 
         // スポナーにIDを付与

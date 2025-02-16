@@ -11,7 +11,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "start": "npm run build && node dist/game.js",
-    "dev": "tsc -w"
+    "dev": "concurrently \"npm run watch\" \"browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify\"",
+    "serve": "browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,8 @@
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
     "@types/node": "^22.13.4",
+    "browser-sync": "^3.0.3",
+    "concurrently": "^9.1.2",
     "typescript": "^5.7.3"
   }
 }
