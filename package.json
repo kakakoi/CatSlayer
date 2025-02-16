@@ -16,7 +16,12 @@
         "prepare": "husky"
     },
     "lint-staged": {
-        "src/**/*.ts": ["biome format", "biome lint", "biome check", "tsc --noEmit"]
+        "src/**/*.ts": [
+            "biome format",
+            "biome lint",
+            "biome check",
+            "bash -c 'tsc --noEmit'"
+        ]
     },
     "repository": {
         "type": "git",
