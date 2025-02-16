@@ -139,18 +139,12 @@ export interface IGame {
     startTime: number;
     stageTime: number;
     remainingTime: number;
-    audioContext: AudioContext | null;
-    masterGain: GainNode | null;
-    isMuted: boolean;
-    bgmPlaying: boolean;
     touchState: TouchState;
-    nextStageStartTime?: number;
+    nextStageStartTime: number;
     update(): void;
     render(): void;
     start(): void;
     restart(): void;
     gameLoop(currentTime: number): void;
-    playSound(soundName: SoundName): void;
-    toggleSound(): void;
     nextStage(): void;
 } 
