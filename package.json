@@ -7,13 +7,18 @@
         "dev": "vite",
         "build": "tsc && vite build",
         "preview": "vite preview",
-        "format": "biome format --write .",
-        "lint": "biome lint .",
-        "check": "biome check --apply .",
+        "format": "biome format --write . --no-git",
+        "lint": "biome lint . --no-git",
+        "check": "biome check --apply . --no-git",
         "prepare": "husky"
     },
     "lint-staged": {
-        "src/**/*.ts": ["biome format", "biome lint", "biome check", "bash -c 'tsc --noEmit'"]
+        "src/**/*.ts": [
+            "biome format",
+            "biome lint",
+            "biome check",
+            "bash -c 'tsc --noEmit'"
+        ]
     },
     "repository": {
         "type": "git",
@@ -28,7 +33,7 @@
     },
     "homepage": "https://github.com/kakakoi/CatSlayer#readme",
     "devDependencies": {
-        "@biomejs/biome": "^1.5.3",
+        "@biomejs/biome": "^1.9.4",
         "@types/node": "^22.13.4",
         "esbuild": "^0.25.0",
         "husky": "^9.1.7",
