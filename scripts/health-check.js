@@ -16,7 +16,7 @@ async function waitForServer(url, timeout) {
             if (response.status === 200) {
                 return true;
             }
-        } catch (error) {
+        } catch (_error) {
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
     }

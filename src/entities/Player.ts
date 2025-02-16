@@ -153,7 +153,6 @@ export class Player extends GameObject implements IPlayer {
         const bounce = Math.sin(this.walkFrame * 0.2) * 2;
 
         // 向きに応じて反転
-        const scaleX = 1;
         if (this.direction === 'left') {
             ctx.scale(-1, 1);
             ctx.translate(-x * 2 - w, 0);

@@ -3,21 +3,7 @@ import { Coin } from './entities/Coin.js';
 import type { Enemy } from './entities/Enemy.js';
 import { Player } from './entities/Player.js';
 import { Spawner } from './entities/Spawner.js';
-import type {
-    Direction,
-    EnemyType,
-    GameState,
-    ICoin,
-    IEnemy,
-    IGame,
-    IGameObject,
-    IPlayer,
-    ISpawner,
-    KeyState,
-    MovePattern,
-    PlayerColors,
-    TouchState,
-} from './types.js';
+import type { GameState, IGame, KeyState, TouchState } from './types.js';
 
 // ゲームクラス
 export class Game implements IGame {
@@ -559,8 +545,15 @@ export class Game implements IGame {
     }
 
     // ゲームループ
-    gameLoop(currentTime: number): void {
+    gameLoop(_currentTime: number): void {
         if (!this.isRunning) return;
+
+        // コインのアニメーションを更新
+        for (const coin of this.coins) {
+            if (!coin.collected) {
+                coin.update(_currentTime);
+            }
+        }
 
         this.update();
         this.render();
