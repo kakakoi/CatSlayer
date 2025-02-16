@@ -9,10 +9,12 @@ class GameObject {
 
     // 衝突判定
     collidesWith(other) {
-        return this.x < other.x + other.width &&
-               this.x + this.width > other.x &&
-               this.y < other.y + other.height &&
-               this.y + this.height > other.y;
+        return (
+            this.x < other.x + other.width &&
+            this.x + this.width > other.x &&
+            this.y < other.y + other.height &&
+            this.y + this.height > other.y
+        );
     }
 }
 
@@ -27,15 +29,15 @@ class Coin extends GameObject {
 
     update(time) {
         // 上下に浮遊するアニメーション
-        this.y += Math.sin((time / 500) + this.animationOffset) * 0.5;
+        this.y += Math.sin(time / 500 + this.animationOffset) * 0.5;
     }
 
     render(ctx) {
         if (this.collected) return;
-        
+
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
+        ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#FFA500';
         ctx.stroke();
@@ -66,15 +68,16 @@ class Spawner extends GameObject {
         }
 
         // 死亡した敵を配列から削除（最適化）
-        if (currentTime % 30 === 0) { // 30フレームごとにチェック
-            this.spawnedEnemies = this.spawnedEnemies.filter(enemy => enemy.isAlive);
+        if (currentTime % 30 === 0) {
+            // 30フレームごとにチェック
+            this.spawnedEnemies = this.spawnedEnemies.filter((enemy) => enemy.isAlive);
             this.enemyCount = this.spawnedEnemies.length;
         }
-        
+
         // 進行度を更新（敵が最大数未満の場合のみ）
         if (this.enemyCount < this.maxEnemiesAlive) {
             this.progress = Math.min(1, (currentTime - this.lastSpawnTime) / this.spawnInterval);
-            
+
             if (this.progress >= 1) {
                 this.spawnEnemy(game);
                 this.lastSpawnTime = currentTime;
@@ -90,16 +93,16 @@ class Spawner extends GameObject {
         const types = ['normal', 'fast', 'tank', 'hunter', 'random'];
         const randomType = types[Math.floor(Math.random() * types.length)];
         const enemy = new Enemy(
-            this.x + this.width/2 - 15,
-            this.y + this.height/2 - 15,
+            this.x + this.width / 2 - 15,
+            this.y + this.height / 2 - 15,
             randomType
         );
-        
+
         enemy.spawnerId = this.id;
         enemy.spawning = true;
         enemy.spawnProgress = 0;
         enemy.spawnStartTime = Date.now();
-        
+
         this.spawnedEnemies.push(enemy);
         game.enemies.push(enemy);
     }
@@ -107,7 +110,7 @@ class Spawner extends GameObject {
     render(ctx) {
         // 穴の描画（黒い円）
         ctx.beginPath();
-        ctx.arc(this.x + this.width/2, this.y + this.height/2, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = '#222222';
         ctx.fill();
         ctx.strokeStyle = '#000000';
@@ -116,8 +119,13 @@ class Spawner extends GameObject {
         // スポーンエフェクト
         if (this.spawnEffect > 0) {
             ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + this.height/2, 
-                this.radius * (1 + this.spawnEffect * 0.5), 0, Math.PI * 2);
+            ctx.arc(
+                this.x + this.width / 2,
+                this.y + this.height / 2,
+                this.radius * (1 + this.spawnEffect * 0.5),
+                0,
+                Math.PI * 2
+            );
             ctx.fillStyle = `rgba(255, 0, 0, ${this.spawnEffect * 0.3})`;
             ctx.fill();
         }
@@ -125,9 +133,9 @@ class Spawner extends GameObject {
         // プログレスバーの背景（グレー）
         const barWidth = this.width * 1.2;
         const barHeight = 8;
-        const barX = this.x + this.width/2 - barWidth/2;
+        const barX = this.x + this.width / 2 - barWidth / 2;
         const barY = this.y + this.height + 5;
-        
+
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(barX, barY, barWidth, barHeight);
 
@@ -139,9 +147,11 @@ class Spawner extends GameObject {
         ctx.fillStyle = 'white';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`${this.enemyCount}/${this.maxEnemiesAlive}`, 
-            this.x + this.width/2, 
-            this.y + this.height/2);
+        ctx.fillText(
+            `${this.enemyCount}/${this.maxEnemiesAlive}`,
+            this.x + this.width / 2,
+            this.y + this.height / 2
+        );
     }
 }
 
@@ -151,12 +161,12 @@ class Player extends GameObject {
         super(x, y, 32, 32);
         this.speed = 5;
         this.direction = 'right';
-        
+
         // レベルシステム
         this.level = 1;
         this.exp = 0;
         this.expToNextLevel = 100;
-        
+
         // 剣攻撃の設定
         this.isAttacking = false;
         this.attackDuration = 200;
@@ -164,7 +174,7 @@ class Player extends GameObject {
         this.attackRange = 80;
         this.attackPower = 1;
         this.attackFrame = 0;
-        
+
         // 自動攻撃の設定
         this.autoAttackRange = 150;
         this.autoAttackCooldown = 500;
@@ -178,9 +188,9 @@ class Player extends GameObject {
             skin: '#FFD700',
             hair: '#8B4513',
             sword: '#SILVER',
-            shield: '#CD853F'
+            shield: '#CD853F',
         };
-        
+
         // その他のプロパティ
         this.score = 0;
         this.powerUps = 0;
@@ -188,19 +198,19 @@ class Player extends GameObject {
 
     update(game) {
         // 移動処理
-        if (game.keys['ArrowLeft']) {
+        if (game.keys.ArrowLeft) {
             this.x -= this.speed;
             this.direction = 'left';
         }
-        if (game.keys['ArrowRight']) {
+        if (game.keys.ArrowRight) {
             this.x += this.speed;
             this.direction = 'right';
         }
-        if (game.keys['ArrowUp']) {
+        if (game.keys.ArrowUp) {
             this.y -= this.speed;
             this.direction = 'up';
         }
-        if (game.keys['ArrowDown']) {
+        if (game.keys.ArrowDown) {
             this.y += this.speed;
             this.direction = 'down';
         }
@@ -215,32 +225,32 @@ class Player extends GameObject {
             if (currentTime - this.lastAutoAttackTime >= this.autoAttackCooldown) {
                 // 最も近い敵を探す
                 let nearestEnemy = null;
-                let minDistance = Infinity;
-                
-                game.enemies.forEach(enemy => {
+                let minDistance = Number.POSITIVE_INFINITY;
+
+                for (const enemy of game.enemies) {
                     if (enemy.isAlive) {
                         const dx = enemy.x - this.x;
                         const dy = enemy.y - this.y;
                         const distance = Math.sqrt(dx * dx + dy * dy);
-                        
+
                         if (distance < minDistance) {
                             minDistance = distance;
                             nearestEnemy = enemy;
                         }
                     }
-                });
+                }
 
                 // 近くに敵がいれば攻撃
                 if (nearestEnemy && minDistance <= this.autoAttackRange) {
                     const dx = nearestEnemy.x - this.x;
                     const dy = nearestEnemy.y - this.y;
-                    
+
                     if (Math.abs(dx) > Math.abs(dy)) {
                         this.direction = dx > 0 ? 'right' : 'left';
                     } else {
                         this.direction = dy > 0 ? 'down' : 'up';
                     }
-                    
+
                     this.isAttacking = true;
                     this.attackTimer = this.attackDuration;
                     this.lastAutoAttackTime = currentTime;
@@ -266,7 +276,7 @@ class Player extends GameObject {
 
     render(ctx) {
         ctx.save();
-        
+
         // キャラクターの基本位置
         const x = Math.floor(this.x);
         const y = Math.floor(this.y);
@@ -278,7 +288,7 @@ class Player extends GameObject {
         const bounce = Math.sin(this.walkFrame * 0.2) * 2;
 
         // 向きに応じて反転
-        let scaleX = 1;
+        const scaleX = 1;
         if (this.direction === 'left') {
             ctx.scale(-1, 1);
             ctx.translate(-x * 2 - w, 0);
@@ -292,7 +302,7 @@ class Player extends GameObject {
         // 頭
         ctx.fillStyle = this.colors.skin;
         ctx.fillRect(x + 10, y + 4 + bounce, 12, 12);
-        
+
         // 髪
         ctx.fillStyle = this.colors.hair;
         ctx.fillRect(x + 8, y + 2 + bounce, 16, 6);
@@ -311,7 +321,7 @@ class Player extends GameObject {
 
         // 攻撃エフェクトの描画
         if (this.isAttacking) {
-            const progress = 1 - (this.attackTimer / this.attackDuration);
+            const progress = 1 - this.attackTimer / this.attackDuration;
             this.attackFrame = Math.floor(progress * 3);
 
             // 剣を振るエフェクト
@@ -319,24 +329,27 @@ class Player extends GameObject {
             ctx.lineWidth = 12;
             ctx.beginPath();
 
-            const centerX = x + w/2;
-            const centerY = y + h/2;
+            const centerX = x + w / 2;
+            const centerY = y + h / 2;
             const swingAngle = Math.PI * progress; // 振り下ろしの角度を調整
 
             if (this.direction === 'right' || this.direction === 'left') {
                 // 縦振り（上から下）
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 
+                ctx.arc(
+                    centerX,
+                    centerY,
                     this.attackRange * 1.5,
-                    -Math.PI/2 - swingAngle/2, // 上から
-                    Math.PI/2 - swingAngle/2,  // 下まで
-                    this.direction === 'left'); // 左向きの場合は逆回転
+                    -Math.PI / 2 - swingAngle / 2, // 上から
+                    Math.PI / 2 - swingAngle / 2, // 下まで
+                    this.direction === 'left'
+                ); // 左向きの場合は逆回転
                 ctx.stroke();
 
                 // 剣の描画
                 ctx.save();
                 ctx.translate(centerX, centerY);
-                ctx.rotate(-Math.PI/2 - swingAngle/2); // 上から始まる回転
+                ctx.rotate(-Math.PI / 2 - swingAngle / 2); // 上から始まる回転
                 ctx.fillStyle = this.colors.sword;
                 ctx.fillRect(0, -9, 120, 18);
                 ctx.restore();
@@ -344,16 +357,19 @@ class Player extends GameObject {
                 // 上下方向の場合は横振り
                 ctx.beginPath();
                 const startAngle = this.direction === 'up' ? Math.PI : 0;
-                ctx.arc(centerX, centerY,
+                ctx.arc(
+                    centerX,
+                    centerY,
                     this.attackRange * 1.5,
-                    startAngle - Math.PI/3 - swingAngle/2,
-                    startAngle + Math.PI/3 - swingAngle/2);
+                    startAngle - Math.PI / 3 - swingAngle / 2,
+                    startAngle + Math.PI / 3 - swingAngle / 2
+                );
                 ctx.stroke();
 
                 // 剣の描画
                 ctx.save();
                 ctx.translate(centerX, centerY);
-                ctx.rotate(startAngle - swingAngle/2);
+                ctx.rotate(startAngle - swingAngle / 2);
                 ctx.fillStyle = this.colors.sword;
                 ctx.fillRect(0, -9, 120, 18);
                 ctx.restore();
@@ -386,7 +402,7 @@ class Player extends GameObject {
         ctx.fillStyle = 'white';
         ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`Lv.${this.level}`, x + w/2, y - 5);
+        ctx.fillText(`Lv.${this.level}`, x + w / 2, y - 5);
 
         ctx.restore();
     }
@@ -406,7 +422,7 @@ class Player extends GameObject {
 
     powerUp() {
         this.powerUps++;
-        this.attackPower = 1 + (this.powerUps * 0.5);
+        this.attackPower = 1 + this.powerUps * 0.5;
         this.attackRange += 5;
     }
 
@@ -422,10 +438,10 @@ class Player extends GameObject {
     checkAttackCollision(enemy) {
         if (!this.isAttacking) return false;
 
-        const centerX = this.x + this.width/2;
-        const centerY = this.y + this.height/2;
-        const enemyCenterX = enemy.x + enemy.width/2;
-        const enemyCenterY = enemy.y + enemy.height/2;
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const enemyCenterX = enemy.x + enemy.width / 2;
+        const enemyCenterY = enemy.y + enemy.height / 2;
 
         // 敵との距離を計算
         const dx = enemyCenterX - centerX;
@@ -445,10 +461,10 @@ class Player extends GameObject {
                 attackAngle = Math.PI;
                 break;
             case 'up':
-                attackAngle = -Math.PI/2;
+                attackAngle = -Math.PI / 2;
                 break;
             case 'down':
-                attackAngle = Math.PI/2;
+                attackAngle = Math.PI / 2;
                 break;
         }
 
@@ -463,7 +479,7 @@ class Player extends GameObject {
         }
 
         // 90度の範囲内なら攻撃が当たる
-        return angleDiff <= Math.PI/2;
+        return angleDiff <= Math.PI / 2;
     }
 }
 
@@ -479,10 +495,10 @@ class Enemy extends GameObject {
         this.spawnProgress = 0;
         this.spawnDuration = 500;
         this.spawnStartTime = Date.now();
-        
+
         // タイプごとの特性を設定
         switch (type) {
-            case 'fast':  // 速い敵（赤）
+            case 'fast': // 速い敵（赤）
                 this.speed = 5;
                 this.moveRange = 150;
                 this.scoreValue = 80;
@@ -490,23 +506,23 @@ class Enemy extends GameObject {
                 this.movePattern = 'zigzag';
                 this.zigzagAngle = 0;
                 break;
-            case 'tank':  // 遅いが価値が高い敵（紫）
+            case 'tank': // 遅いが価値が高い敵（紫）
                 this.speed = 1.5;
                 this.moveRange = 100;
                 this.scoreValue = 150;
                 this.color = '#800080';
                 this.movePattern = 'horizontal';
-                this.width = 40;  // より大きい
+                this.width = 40; // より大きい
                 this.height = 40;
                 break;
-            case 'hunter':  // プレイヤーを追いかける敵（オレンジ）
+            case 'hunter': // プレイヤーを追いかける敵（オレンジ）
                 this.speed = 2.5;
                 this.moveRange = 300;
                 this.scoreValue = 120;
                 this.color = '#FFA500';
                 this.movePattern = 'chase';
                 break;
-            case 'random':  // ランダムな動きの敵（緑）
+            case 'random': // ランダムな動きの敵（緑）
                 this.speed = 3;
                 this.moveRange = 200;
                 this.scoreValue = 100;
@@ -516,7 +532,7 @@ class Enemy extends GameObject {
                 this.dx = Math.random() * 2 - 1;
                 this.dy = Math.random() * 2 - 1;
                 break;
-            default:  // 通常の敵（青）
+            default: // 通常の敵（青）
                 this.speed = 3;
                 this.moveRange = 200;
                 this.scoreValue = 50;
@@ -524,7 +540,7 @@ class Enemy extends GameObject {
                 this.movePattern = 'circle';
                 break;
         }
-        
+
         this.direction = 1;
     }
 
@@ -533,7 +549,10 @@ class Enemy extends GameObject {
 
         if (this.spawning) {
             const currentTime = Date.now();
-            this.spawnProgress = Math.min(1, (currentTime - this.spawnStartTime) / this.spawnDuration);
+            this.spawnProgress = Math.min(
+                1,
+                (currentTime - this.spawnStartTime) / this.spawnDuration
+            );
             if (this.spawnProgress >= 1) {
                 this.spawning = false;
             }
@@ -552,9 +571,9 @@ class Enemy extends GameObject {
                     this.zigzagAngle = Math.PI - this.zigzagAngle;
                 }
                 break;
-            
+
             case 'chase':
-                if (game && game.player) {
+                if (game?.player) {
                     const dx = game.player.x - this.x;
                     const dy = game.player.y - this.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -564,36 +583,38 @@ class Enemy extends GameObject {
                     }
                 }
                 break;
-            
+
             case 'random':
                 this.directionChangeTimer++;
-                if (this.directionChangeTimer > 60) {  // 約1秒ごとに方向変更
+                if (this.directionChangeTimer > 60) {
+                    // 約1秒ごとに方向変更
                     this.dx = Math.random() * 2 - 1;
                     this.dy = Math.random() * 2 - 1;
                     this.directionChangeTimer = 0;
                 }
                 this.x += this.dx * this.speed;
                 this.y += this.dy * this.speed;
-                
+
                 // 画面外に出ないように制限
                 if (game) {
                     if (this.x < 0 || this.x > game.canvas.width - this.width) this.dx *= -1;
                     if (this.y < 0 || this.y > game.canvas.height - this.height) this.dy *= -1;
                 }
                 break;
-            
+
             case 'horizontal':
                 this.x += this.speed * this.direction;
                 if (Math.abs(this.x - this.startX) > this.moveRange) {
                     this.direction *= -1;
                 }
                 break;
-            
-            case 'circle':
+
+            case 'circle': {
                 const angle = (Date.now() / 1000) % (Math.PI * 2);
-                this.x = this.startX + Math.cos(angle) * this.moveRange/2;
-                this.y = this.startY + Math.sin(angle) * this.moveRange/2;
+                this.x = this.startX + (Math.cos(angle) * this.moveRange) / 2;
+                this.y = this.startY + (Math.sin(angle) * this.moveRange) / 2;
                 break;
+            }
         }
     }
 
@@ -603,14 +624,14 @@ class Enemy extends GameObject {
         if (this.spawning) {
             const scale = this.spawnProgress;
             const alpha = this.spawnProgress;
-            
+
             ctx.save();
-            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
             ctx.scale(scale, scale);
             ctx.rotate(this.spawnProgress * Math.PI * 2);
-            
-            this.drawTiger(ctx, -this.width/2, -this.height/2, this.width, this.height, alpha);
-            
+
+            this.drawTiger(ctx, -this.width / 2, -this.height / 2, this.width, this.height, alpha);
+
             ctx.restore();
         } else {
             this.drawTiger(ctx, this.x, this.y, this.width, this.height, 1);
@@ -625,12 +646,12 @@ class Enemy extends GameObject {
         ctx.fillRect(x, y, width, height);
 
         // 虎の特徴を追加
-        const stripeColor = 'rgba(0, 0, 0, ' + alpha * 0.5 + ')';
+        const stripeColor = `rgba(0, 0, 0, ${alpha * 0.5})`;
         ctx.fillStyle = stripeColor;
 
         // 縦縞模様（タイプによって異なるパターン）
         switch (this.type) {
-            case 'fast':  // 速い敵は斜めの縞
+            case 'fast': // 速い敵は斜めの縞
                 for (let i = 0; i < 3; i++) {
                     ctx.beginPath();
                     ctx.moveTo(x + width * (0.2 + i * 0.3), y);
@@ -640,36 +661,31 @@ class Enemy extends GameObject {
                     ctx.fill();
                 }
                 break;
-            
-            case 'tank':  // タンクは太い縦縞
+
+            case 'tank': // タンクは太い縦縞
                 for (let i = 0; i < 2; i++) {
-                    ctx.fillRect(
-                        x + width * (0.3 + i * 0.4),
-                        y,
-                        width * 0.15,
-                        height
-                    );
+                    ctx.fillRect(x + width * (0.3 + i * 0.4), y, width * 0.15, height);
                 }
                 break;
-            
-            case 'hunter':  // ハンターは波状の縞
+
+            case 'hunter': // ハンターは波状の縞
                 ctx.beginPath();
                 for (let i = 0; i < 3; i++) {
                     const xPos = x + width * (0.2 + i * 0.3);
                     ctx.moveTo(xPos, y);
-                    for (let j = 0; j <= height; j += height/4) {
+                    for (let j = 0; j <= height; j += height / 4) {
                         ctx.quadraticCurveTo(
                             xPos + width * 0.1,
-                            y + j + height/8,
+                            y + j + height / 8,
                             xPos,
-                            y + j + height/4
+                            y + j + height / 4
                         );
                     }
                 }
                 ctx.stroke();
                 break;
-            
-            case 'random':  // ランダムは点状の模様
+
+            case 'random': // ランダムは点状の模様
                 for (let i = 0; i < 5; i++) {
                     ctx.beginPath();
                     ctx.arc(
@@ -682,15 +698,10 @@ class Enemy extends GameObject {
                     ctx.fill();
                 }
                 break;
-            
-            default:  // 通常の敵は普通の縦縞
+
+            default: // 通常の敵は普通の縦縞
                 for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(
-                        x + width * (0.25 + i * 0.25),
-                        y,
-                        width * 0.1,
-                        height
-                    );
+                    ctx.fillRect(x + width * (0.25 + i * 0.25), y, width * 0.1, height);
                 }
         }
 
@@ -732,14 +743,14 @@ class Game {
         // キャンバスの設定
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
+
         // 入力処理の初期化
         this.keys = {};
         this.initializeInputs();
 
         // ゲームオブジェクトの初期化
         this.player = new Player(50, 50);
-        
+
         // ゲームの状態
         this.isRunning = false;
 
@@ -757,7 +768,7 @@ class Game {
             currentY: 0,
             lastTapTime: 0,
             doubleTapDelay: 300,
-            joystickRadius: 50 // ジョイスティックの移動半径
+            joystickRadius: 50, // ジョイスティックの移動半径
         };
 
         // 画面サイズの設定
@@ -787,27 +798,30 @@ class Game {
     // スポナーのセットアップを別メソッドに分離
     setupSpawners() {
         const margin = 100;
-        
+
         // スポナーを4つの角に配置
         this.spawners = [
             new Spawner(margin, margin, 2000),
             new Spawner(this.canvas.width - margin - 40, margin, 2000),
             new Spawner(margin, this.canvas.height - margin - 40, 2000),
-            new Spawner(this.canvas.width - margin - 40, this.canvas.height - margin - 40, 2000)
+            new Spawner(this.canvas.width - margin - 40, this.canvas.height - margin - 40, 2000),
         ];
-        
+
         // スポナーにIDを付与
         this.spawners.forEach((spawner, index) => {
             spawner.id = index;
             spawner.active = false;
-            spawner.lastSpawnTime = Date.now() + (index * 500); // スポナーごとに時間をずらす
+            spawner.lastSpawnTime = Date.now() + index * 500; // スポナーごとに時間をずらす
         });
 
         // スポナーを段階的に起動
         this.spawners.forEach((spawner, index) => {
-            setTimeout(() => {
-                spawner.active = true;
-            }, 2000 + index * 500);
+            setTimeout(
+                () => {
+                    spawner.active = true;
+                },
+                2000 + index * 500
+            );
         });
     }
 
@@ -815,7 +829,7 @@ class Game {
     resize() {
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        
+
         // 画面の向きと端末に応じて最適なサイズを計算
         if (windowWidth < windowHeight) {
             // 縦向きの場合
@@ -826,12 +840,12 @@ class Game {
             // 画面の90%の高さを基準にする
             const targetHeight = windowHeight * 0.9;
             // 16:9のアスペクト比を維持
-            const targetWidth = targetHeight * (16/9);
-            
+            const targetWidth = targetHeight * (16 / 9);
+
             // 幅が画面を超える場合は幅を基準にする
             if (targetWidth > windowWidth * 0.95) {
                 this.canvas.width = windowWidth * 0.95;
-                this.canvas.height = (windowWidth * 0.95) * (9/16);
+                this.canvas.height = windowWidth * 0.95 * (9 / 16);
             } else {
                 this.canvas.width = targetWidth;
                 this.canvas.height = targetHeight;
@@ -869,13 +883,13 @@ class Game {
             currentY: 0,
             lastTapTime: 0,
             doubleTapDelay: 300,
-            joystickRadius: 50 // ジョイスティックの移動半径
+            joystickRadius: 50, // ジョイスティックの移動半径
         };
 
         // タッチ開始時の処理を更新
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            
+
             if (this.gameState === 'gameover') {
                 this.restart();
                 return;
@@ -887,8 +901,7 @@ class Game {
             const y = touch.clientY - rect.top;
 
             // サウンドボタンの判定
-            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 &&
-                y >= 10 && y <= 40) {
+            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
                 this.toggleSound();
                 return;
             }
@@ -924,22 +937,23 @@ class Game {
 
             this.touchState.currentX = x;
             this.touchState.currentY = y;
-            
+
             // ジョイスティックの方向計算
             const dx = x - this.touchState.startX;
             const dy = y - this.touchState.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
+
             // 移動方向の正規化と閾値の適用
-            if (distance > 10) { // デッドゾーン
+            if (distance > 10) {
+                // デッドゾーン
                 const normalizedDx = dx / distance;
                 const normalizedDy = dy / distance;
-                
+
                 // 8方向の移動に制限
-                this.keys['ArrowRight'] = normalizedDx > 0.5;
-                this.keys['ArrowLeft'] = normalizedDx < -0.5;
-                this.keys['ArrowDown'] = normalizedDy > 0.5;
-                this.keys['ArrowUp'] = normalizedDy < -0.5;
+                this.keys.ArrowRight = normalizedDx > 0.5;
+                this.keys.ArrowLeft = normalizedDx < -0.5;
+                this.keys.ArrowDown = normalizedDy > 0.5;
+                this.keys.ArrowUp = normalizedDy < -0.5;
 
                 // プレイヤーの向きを設定
                 if (Math.abs(normalizedDx) > Math.abs(normalizedDy)) {
@@ -959,10 +973,10 @@ class Game {
 
     // 新しいメソッド：移動キーをリセット
     resetMovementKeys() {
-        this.keys['ArrowRight'] = false;
-        this.keys['ArrowLeft'] = false;
-        this.keys['ArrowDown'] = false;
-        this.keys['ArrowUp'] = false;
+        this.keys.ArrowRight = false;
+        this.keys.ArrowLeft = false;
+        this.keys.ArrowDown = false;
+        this.keys.ArrowUp = false;
     }
 
     // ゲームの更新処理
@@ -982,64 +996,67 @@ class Game {
         }
 
         const currentTime = Date.now();
-        
+
         // 残り時間の更新
-        this.remainingTime = Math.max(0, this.stageTime - Math.floor((currentTime - this.startTime) / 1000));
+        this.remainingTime = Math.max(
+            0,
+            this.stageTime - Math.floor((currentTime - this.startTime) / 1000)
+        );
 
         // 時間切れチェック
         if (this.remainingTime <= 0) {
             this.gameState = 'stageClear';
             this.nextStageStartTime = Date.now() + 5000; // 5秒後に次のステージ
-            
+
             // 現在の敵をすべて消去
             this.enemies = [];
             this.coins = [];
-            
+
             // スポナーを停止
-            this.spawners.forEach(spawner => {
+            for (const spawner of this.spawners) {
                 spawner.active = false;
                 spawner.spawnedEnemies = [];
                 spawner.enemyCount = 0;
-            });
-            
+            }
+
             this.playSound('stageClear');
             return;
         }
 
         this.player.update(this);
-        
+
         // スポナーの更新
-        this.spawners.forEach(spawner => {
+        for (const spawner of this.spawners) {
             spawner.update(this, currentTime);
-        });
+        }
 
         // 敵の更新と衝突判定
-        this.enemies.forEach(enemy => {
+        for (const enemy of this.enemies) {
             if (enemy.isAlive) {
                 enemy.update(this);
-                
+
                 if (this.player.checkAttackCollision(enemy)) {
                     enemy.isAlive = false;
                     enemy.deathTime = Date.now();
                     this.score += enemy.scoreValue;
                     this.player.gainExp(enemy.scoreValue * 0.4);
-                    
+
                     // 敵を倒した時の効果音
                     this.playSound('enemyDeath');
-                    
+
                     if (Math.random() < 0.5) {
                         this.coins.push(new Coin(enemy.x, enemy.y));
                     }
                 }
-                
+
                 if (enemy.isAlive && this.player.collidesWith(enemy)) {
                     this.gameState = 'gameover';
                 }
             }
-        });
+        }
 
         // コインの更新と収集判定
-        this.coins.forEach(coin => {
+        for (const coin of this.coins) {
             if (!coin.collected) {
                 coin.update(currentTime);
                 if (this.player.collidesWith(coin)) {
@@ -1050,35 +1067,40 @@ class Game {
                     this.playSound('coin');
                 }
             }
-        });
+        }
 
         // 死亡した敵を配列から削除（定期的なクリーンアップ）
-        this.enemies = this.enemies.filter(enemy => 
-            enemy.isAlive || 
-            (Date.now() - enemy.deathTime) < 1000
+        this.enemies = this.enemies.filter(
+            (enemy) => enemy.isAlive || Date.now() - enemy.deathTime < 1000
         );
 
         // 使用済みのコインを配列から削除
-        this.coins = this.coins.filter(coin => !coin.collected);
+        this.coins = this.coins.filter((coin) => !coin.collected);
     }
 
     // 描画処理
     render() {
         // 画面クリア
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // 背景のグリッド描画
         this.drawGrid();
 
         // スポナーの描画
-        this.spawners.forEach(spawner => spawner.render(this.ctx));
+        for (const spawner of this.spawners) {
+            spawner.render(this.ctx);
+        }
 
         // コインの描画
-        this.coins.forEach(coin => coin.render(this.ctx));
+        for (const coin of this.coins) {
+            coin.render(this.ctx);
+        }
 
         // 敵の描画
-        this.enemies.forEach(enemy => enemy.render(this.ctx));
-        
+        for (const enemy of this.enemies) {
+            enemy.render(this.ctx);
+        }
+
         // プレイヤーの描画
         this.player.render(this.ctx);
 
@@ -1087,7 +1109,7 @@ class Game {
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`Stage: ${this.stage}`, 10, 30);
-        
+
         // スコア表示
         this.ctx.font = '20px Arial';
         this.ctx.fillStyle = 'black';
@@ -1116,8 +1138,13 @@ class Game {
         if (this.touchState.isMoving) {
             // ジョイスティックの基準円
             this.ctx.beginPath();
-            this.ctx.arc(this.touchState.startX, this.touchState.startY, 
-                this.touchState.joystickRadius, 0, Math.PI * 2);
+            this.ctx.arc(
+                this.touchState.startX,
+                this.touchState.startY,
+                this.touchState.joystickRadius,
+                0,
+                Math.PI * 2
+            );
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             this.ctx.lineWidth = 2;
             this.ctx.stroke();
@@ -1127,11 +1154,11 @@ class Game {
             const dy = this.touchState.currentY - this.touchState.startY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             const maxDistance = this.touchState.joystickRadius;
-            
-            const stickX = this.touchState.startX + 
-                (dx / distance) * Math.min(distance, maxDistance);
-            const stickY = this.touchState.startY + 
-                (dy / distance) * Math.min(distance, maxDistance);
+
+            const stickX =
+                this.touchState.startX + (dx / distance) * Math.min(distance, maxDistance);
+            const stickY =
+                this.touchState.startY + (dy / distance) * Math.min(distance, maxDistance);
 
             this.ctx.beginPath();
             this.ctx.arc(stickX, stickY, 20, 0, Math.PI * 2);
@@ -1149,12 +1176,20 @@ class Game {
         this.ctx.fillStyle = 'white';
         this.ctx.font = '48px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`STAGE ${this.stage} CLEAR!`, this.canvas.width/2, this.canvas.height/2 - 50);
-        
+        this.ctx.fillText(
+            `STAGE ${this.stage} CLEAR!`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 - 50
+        );
+
         // カウントダウンの表示
         const nextStageIn = Math.ceil((this.nextStageStartTime - Date.now()) / 1000);
         this.ctx.font = '36px Arial';
-        this.ctx.fillText(`Next Stage in ${nextStageIn}`, this.canvas.width/2, this.canvas.height/2 + 10);
+        this.ctx.fillText(
+            `Next Stage in ${nextStageIn}`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 + 10
+        );
     }
 
     renderGameOver() {
@@ -1166,15 +1201,23 @@ class Game {
         this.ctx.fillStyle = 'white';
         this.ctx.font = '48px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.canvas.width/2, this.canvas.height/2 - 50);
-        
+        this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 50);
+
         // スコア表示
         this.ctx.font = '24px Arial';
-        this.ctx.fillText(`Final Score: ${this.score}`, this.canvas.width/2, this.canvas.height/2 + 10);
-        
+        this.ctx.fillText(
+            `Final Score: ${this.score}`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 + 10
+        );
+
         // リスタート案内（タッチとスペースキーの両方を表示）
         this.ctx.font = '20px Arial';
-        this.ctx.fillText('Tap or Press Space to Restart', this.canvas.width/2, this.canvas.height/2 + 50);
+        this.ctx.fillText(
+            'Tap or Press Space to Restart',
+            this.canvas.width / 2,
+            this.canvas.height / 2 + 50
+        );
     }
 
     restart() {
@@ -1186,22 +1229,25 @@ class Game {
         this.player = new Player(50, 50);
         this.enemies = [];
         this.coins = [];
-        
+
         // スポナーの完全な再初期化
-        this.spawners.forEach((spawner, index) => {
+        for (const spawner of this.spawners) {
             spawner.active = false;
-            spawner.lastSpawnTime = Date.now() + (index * 500);
+            spawner.lastSpawnTime = Date.now() + spawner.id * 500;
             spawner.spawnInterval = 2000;
             spawner.maxEnemiesAlive = 5;
             spawner.enemyCount = 0;
             spawner.spawnedEnemies = [];
             spawner.progress = 0;
-            
+
             // 段階的に起動
-            setTimeout(() => {
-                spawner.active = true;
-            }, 2000 + index * 500);
-        });
+            setTimeout(
+                () => {
+                    spawner.active = true;
+                },
+                2000 + spawner.id * 500
+            );
+        }
 
         if (this.audioContext) {
             this.playBGM();
@@ -1222,21 +1268,29 @@ class Game {
     start() {
         if (!this.isRunning) {
             this.isRunning = true;
-            
+
             // 最初のユーザー操作時にAudioContextを初期化
-            this.canvas.addEventListener('touchstart', () => {
-                if (!this.audioContext) {
-                    this.setupAudio();
-                    this.playBGM();
-                }
-            }, { once: true });
-            
-            this.canvas.addEventListener('click', () => {
-                if (!this.audioContext) {
-                    this.setupAudio();
-                    this.playBGM();
-                }
-            }, { once: true });
+            this.canvas.addEventListener(
+                'touchstart',
+                () => {
+                    if (!this.audioContext) {
+                        this.setupAudio();
+                        this.playBGM();
+                    }
+                },
+                { once: true }
+            );
+
+            this.canvas.addEventListener(
+                'click',
+                () => {
+                    if (!this.audioContext) {
+                        this.setupAudio();
+                        this.playBGM();
+                    }
+                },
+                { once: true }
+            );
 
             this.gameLoop(0);
         }
@@ -1248,7 +1302,7 @@ class Game {
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         // マスターボリューム
         this.masterGain = this.audioContext.createGain();
         this.masterGain.gain.value = 0.3;
@@ -1264,17 +1318,20 @@ class Game {
         this.coinSound = () => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime); // A5
-            oscillator.frequency.exponentialRampToValueAtTime(440, this.audioContext.currentTime + 0.1); // A4
-            
+            oscillator.frequency.exponentialRampToValueAtTime(
+                440,
+                this.audioContext.currentTime + 0.1
+            ); // A4
+
             gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.masterGain);
-            
+
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + 0.1);
         };
@@ -1283,17 +1340,20 @@ class Game {
         this.enemyDeathSound = () => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.type = 'square';
             oscillator.frequency.setValueAtTime(220, this.audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(55, this.audioContext.currentTime + 0.2);
-            
+            oscillator.frequency.exponentialRampToValueAtTime(
+                55,
+                this.audioContext.currentTime + 0.2
+            );
+
             gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.masterGain);
-            
+
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + 0.2);
         };
@@ -1302,18 +1362,18 @@ class Game {
         this.levelUpSound = () => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
             oscillator.frequency.setValueAtTime(554.37, this.audioContext.currentTime + 0.1);
             oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.2);
-            
+
             gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.masterGain);
-            
+
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + 0.3);
         };
@@ -1321,56 +1381,37 @@ class Game {
         // ゲームオーバー音
         this.gameOverSound = () => {
             const time = this.audioContext.currentTime;
-            
+
             // RPG風のメロディを定義
             const notes = [
                 { freq: 523.25, duration: 0.15 }, // C5
                 { freq: 587.33, duration: 0.15 }, // D5
                 { freq: 523.25, duration: 0.15 }, // C5
-                { freq: 440.00, duration: 0.15 }, // A4
-                { freq: 392.00, duration: 0.3 },  // G4
-                { freq: 349.23, duration: 0.6 }   // F4
+                { freq: 440.0, duration: 0.15 }, // A4
+                { freq: 392.0, duration: 0.3 }, // G4
+                { freq: 349.23, duration: 0.6 }, // F4
             ];
 
             // 各音を順番に再生
             let currentTime = time;
-            notes.forEach(note => {
+            for (const note of notes) {
                 const oscillator = this.audioContext.createOscillator();
                 const gainNode = this.audioContext.createGain();
-                
-                // メインの音色（より柔らかい音に）
+
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(note.freq, currentTime);
-                
-                // ボリュームエンベロープ（なめらかな減衰）
+                oscillator.frequency.value = note.freq;
+
                 gainNode.gain.setValueAtTime(0.2, currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.15, currentTime + note.duration * 0.5);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration);
-                
+                gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration - 0.1);
+
                 oscillator.connect(gainNode);
                 gainNode.connect(this.masterGain);
-                
+
                 oscillator.start(currentTime);
                 oscillator.stop(currentTime + note.duration);
-                
-                // 和音効果（より明るい音に）
-                const harmonicOsc = this.audioContext.createOscillator();
-                const harmonicGain = this.audioContext.createGain();
-                
-                harmonicOsc.type = 'triangle';
-                harmonicOsc.frequency.setValueAtTime(note.freq * 1.5, currentTime); // 明るい倍音
-                
-                harmonicGain.gain.setValueAtTime(0.1, currentTime);
-                harmonicGain.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration);
-                
-                harmonicOsc.connect(harmonicGain);
-                harmonicGain.connect(this.masterGain);
-                
-                harmonicOsc.start(currentTime);
-                harmonicOsc.stop(currentTime + note.duration);
-                
+
                 currentTime += note.duration;
-            });
+            }
 
             // 軽いリバーブ効果
             const convolver = this.audioContext.createConvolver();
@@ -1378,18 +1419,18 @@ class Game {
             const sampleRate = this.audioContext.sampleRate;
             const impulseLength = sampleRate * reverbTime;
             const impulse = this.audioContext.createBuffer(2, impulseLength, sampleRate);
-            
+
             for (let channel = 0; channel < 2; channel++) {
                 const impulseData = impulse.getChannelData(channel);
                 for (let i = 0; i < impulseLength; i++) {
-                    impulseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impulseLength, 3);
+                    impulseData[i] = (Math.random() * 2 - 1) * (1 - i / impulseLength) ** 3;
                 }
             }
-            
+
             convolver.buffer = impulse;
             const reverbGain = this.audioContext.createGain();
             reverbGain.gain.value = 0.1; // リバーブを控えめに
-            
+
             convolver.connect(reverbGain);
             reverbGain.connect(this.masterGain);
         };
@@ -1398,19 +1439,19 @@ class Game {
         this.stageClearSound = () => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime); // C5
             oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1); // E5
             oscillator.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.2); // G5
-            oscillator.frequency.setValueAtTime(1046.50, this.audioContext.currentTime + 0.3); // C6
-            
+            oscillator.frequency.setValueAtTime(1046.5, this.audioContext.currentTime + 0.3); // C6
+
             gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.masterGain);
-            
+
             oscillator.start();
             oscillator.stop(this.audioContext.currentTime + 0.4);
         };
@@ -1424,16 +1465,16 @@ class Game {
         const playNote = (frequency, startTime, duration) => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.type = 'sine';
             oscillator.frequency.value = frequency;
-            
+
             gainNode.gain.setValueAtTime(0.2, startTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration - 0.1);
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.masterGain);
-            
+
             oscillator.start(startTime);
             oscillator.stop(startTime + duration);
         };
@@ -1441,10 +1482,22 @@ class Game {
         const bpm = 120;
         const beatDuration = 60 / bpm;
         const sequence = [
-            440, 523.25, 659.25, 523.25,  // メロディ1
-            440, 523.25, 659.25, 523.25,  // メロディ2
-            392, 493.88, 587.33, 493.88,  // メロディ3
-            349.23, 440, 523.25, 440      // メロディ4
+            440,
+            523.25,
+            659.25,
+            523.25, // メロディ1
+            440,
+            523.25,
+            659.25,
+            523.25, // メロディ2
+            392,
+            493.88,
+            587.33,
+            493.88, // メロディ3
+            349.23,
+            440,
+            523.25,
+            440, // メロディ4
         ];
 
         const playSequence = (time) => {
@@ -1454,8 +1507,10 @@ class Game {
 
             // ループ再生
             if (this.bgmPlaying) {
-                setTimeout(() => playSequence(time + sequence.length * beatDuration), 
-                    sequence.length * beatDuration * 1000);
+                setTimeout(
+                    () => playSequence(time + sequence.length * beatDuration),
+                    sequence.length * beatDuration * 1000
+                );
             }
         };
 
@@ -1498,13 +1553,13 @@ class Game {
         // 敵とコインを完全に消去
         this.enemies = [];
         this.coins = [];
-        
+
         // スポナーを一旦すべて停止
-        this.spawners.forEach(spawner => {
+        for (const spawner of this.spawners) {
             spawner.active = false;
             spawner.spawnedEnemies = [];
             spawner.enemyCount = 0;
-        });
+        }
 
         // ステージ情報の更新
         this.stage++;
@@ -1513,18 +1568,18 @@ class Game {
         this.startTime = Date.now();
 
         // スポナーの設定を更新
-        this.spawners.forEach(spawner => {
+        for (const spawner of this.spawners) {
             // ステージが上がるごとに敵の生成間隔を短くする
             spawner.spawnInterval = Math.max(1000, 2000 - (this.stage - 1) * 200);
             spawner.maxEnemiesAlive = Math.min(8, 5 + Math.floor((this.stage - 1) / 2));
-            spawner.lastSpawnTime = Date.now() + (spawner.id * 500); // スポナーごとに時間をずらす
-        });
+            spawner.lastSpawnTime = Date.now() + spawner.id * 500; // スポナーごとに時間をずらす
+        }
 
         // 2秒後にスポナーを起動
         setTimeout(() => {
-            this.spawners.forEach(spawner => {
+            for (const spawner of this.spawners) {
                 spawner.active = true;
-            });
+            }
         }, 2000);
 
         // ステージクリア音を再生
@@ -1558,4 +1613,4 @@ class Game {
 window.onload = () => {
     const game = new Game();
     game.start();
-}; 
+};
