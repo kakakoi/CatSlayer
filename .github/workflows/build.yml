@@ -1,9 +1,15 @@
-name: Build TypeScript
+name: Build TypeScript and Deploy
 
 on:
   push:
     branches:
       - main
+
+# GitHub Pagesへのデプロイ権限を設定
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -25,8 +31,34 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Copy static files
+        run: |
+          cp index.html dist/
+          cp -r assets dist/ || true
+          cp favicon.ico dist/ || true
+          cp apple-touch-icon.png dist/ || true
+          cp android-chrome-192x192.png dist/ || true
+          cp android-chrome-512x512.png dist/ || true
+          cp favicon-32x32.png dist/ || true
+          cp favicon-16x16.png dist/ || true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: dist
-          path: dist/ 
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 
