@@ -18,4 +18,4 @@ export class GameObject implements IGameObject {
             this.y + this.height > other.y
         );
     }
-} 
+}

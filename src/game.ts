@@ -1,23 +1,23 @@
-import {
-    type IGame,
-    type IGameObject,
-    type ICoin,
-    type IEnemy,
-    type IPlayer,
-    type ISpawner,
-    type GameState,
-    type TouchState,
-    type KeyState,
-    type Direction,
-    type PlayerColors,
-    type EnemyType,
-    type MovePattern,
-} from './types.js';
-import { Player } from './entities/Player.js';
-import { Enemy } from './entities/Enemy.js';
-import { Coin } from './entities/Coin.js';
-import { Spawner } from './entities/Spawner.js';
 import { AudioManager } from './audio/AudioManager.js';
+import { Coin } from './entities/Coin.js';
+import type { Enemy } from './entities/Enemy.js';
+import { Player } from './entities/Player.js';
+import { Spawner } from './entities/Spawner.js';
+import type {
+    Direction,
+    EnemyType,
+    GameState,
+    ICoin,
+    IEnemy,
+    IGame,
+    IGameObject,
+    IPlayer,
+    ISpawner,
+    KeyState,
+    MovePattern,
+    PlayerColors,
+    TouchState,
+} from './types.js';
 
 // ゲームクラス
 export class Game implements IGame {
@@ -68,7 +68,7 @@ export class Game implements IGame {
             currentY: 0,
             lastTapTime: 0,
             doubleTapDelay: 300,
-            joystickRadius: 50
+            joystickRadius: 50,
         };
 
         window.addEventListener('resize', () => this.resize());
@@ -174,7 +174,7 @@ export class Game implements IGame {
             const rect = this.canvas.getBoundingClientRect();
             const x = clientX - rect.left;
             const y = clientY - rect.top;
-            
+
             if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
                 this.audioManager.toggleSound();
                 return true;
@@ -188,7 +188,7 @@ export class Game implements IGame {
                 this.restart();
                 return;
             }
-            
+
             checkSoundButtonClick(e.clientX, e.clientY);
         });
 
@@ -202,7 +202,7 @@ export class Game implements IGame {
             }
 
             const touch = e.touches[0];
-            
+
             // サウンドボタンの判定
             if (checkSoundButtonClick(touch.clientX, touch.clientY)) {
                 return;
@@ -434,7 +434,11 @@ export class Game implements IGame {
         this.ctx.fillStyle = 'white';
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(this.audioManager.getMuteState() ? '🔇' : '🔊', this.canvas.width - 25, 30);
+        this.ctx.fillText(
+            this.audioManager.getMuteState() ? '🔇' : '🔊',
+            this.canvas.width - 25,
+            30
+        );
 
         // 仮想ジョイスティックの描画
         if (this.touchState.isMoving) {

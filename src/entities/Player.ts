@@ -1,4 +1,4 @@
-import type { IGame, IPlayer, IEnemy, Direction, PlayerColors } from '../types.js';
+import type { Direction, IEnemy, IGame, IPlayer, PlayerColors } from '../types.js';
 import { GameObject } from './GameObject.js';
 
 export class Player extends GameObject implements IPlayer {
@@ -346,4 +346,4 @@ export class Player extends GameObject implements IPlayer {
         // 90度の範囲内なら攻撃が当たる
         return angleDiff <= Math.PI / 2;
     }
-} 
+}

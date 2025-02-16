@@ -1,6 +1,6 @@
-import type { IGame, ISpawner, IEnemy, EnemyType } from '../types.js';
-import { GameObject } from './GameObject.js';
+import type { EnemyType, IEnemy, IGame, ISpawner } from '../types.js';
 import { Enemy } from './Enemy.js';
+import { GameObject } from './GameObject.js';
 
 export class Spawner extends GameObject implements ISpawner {
     public id = 0;
@@ -126,4 +126,4 @@ export class Spawner extends GameObject implements ISpawner {
             this.y + this.height / 2
         );
     }
-} 
+}

@@ -1,4 +1,4 @@
-import type { IGame, IEnemy, EnemyType, MovePattern } from '../types.js';
+import type { EnemyType, IEnemy, IGame, MovePattern } from '../types.js';
 import { GameObject } from './GameObject.js';
 
 export class Enemy extends GameObject implements IEnemy {
@@ -22,7 +22,11 @@ export class Enemy extends GameObject implements IEnemy {
     public dy: number;
     public deathTime: number | null;
 
-    constructor(x: number, y: number, public type: EnemyType = 'normal') {
+    constructor(
+        x: number,
+        y: number,
+        public type: EnemyType = 'normal'
+    ) {
         super(x, y, 30, 30);
         this.isAlive = true;
         this.startX = x;
@@ -174,7 +178,14 @@ export class Enemy extends GameObject implements IEnemy {
         }
     }
 
-    drawTiger(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, alpha: number): void {
+    drawTiger(
+        ctx: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        alpha: number
+    ): void {
         ctx.save();
 
         // 体の基本色
@@ -271,4 +282,4 @@ export class Enemy extends GameObject implements IEnemy {
 
         ctx.restore();
     }
-} 
+}

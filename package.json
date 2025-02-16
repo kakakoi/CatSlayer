@@ -1,51 +1,42 @@
 {
-  "name": "catslayer",
-  "version": "1.0.0",
-  "description": "このゲームは8-bitスタイルのアクションゲームで、プレイヤーは剣士となって、様々な種類の虎型の敵と戦います。",
-  "main": "dist/game.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "biome format --write .",
-    "lint": "biome lint .",
-    "check": "biome check --apply .",
-    "build": "tsc",
-    "watch": "tsc -w",
-    "start": "npm run build && node dist/game.js",
-    "dev": "npm-run-all --parallel watch serve",
-    "serve": "browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify",
-    "prepare": "simple-git-hooks",
-    "postinstall": "simple-git-hooks"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "npx lint-staged --verbose"
-  },
-  "lint-staged": {
-    "*.{js,ts}": [
-      "biome format",
-      "biome lint",
-      "biome check",
-      "tsc --noEmit"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kakakoi/CatSlayer.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/kakakoi/CatSlayer/issues"
-  },
-  "homepage": "https://github.com/kakakoi/CatSlayer#readme",
-  "devDependencies": {
-    "@biomejs/biome": "^1.5.3",
-    "@types/node": "^22.13.4",
-    "browser-sync": "^3.0.3",
-    "lint-staged": "^15.4.3",
-    "npm-run-all": "^4.1.5",
-    "simple-git-hooks": "^2.11.1",
-    "typescript": "^5.7.3"
-  }
+    "name": "catslayer",
+    "version": "1.0.0",
+    "description": "このゲームは8-bitスタイルのアクションゲームで、プレイヤーは剣士となって、様々な種類の虎型の敵と戦います。",
+    "main": "dist/game.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format": "biome format --write .",
+        "lint": "biome lint .",
+        "check": "biome check --apply .",
+        "build": "tsc",
+        "watch": "tsc -w",
+        "start": "npm run build && node dist/game.js",
+        "dev": "npm-run-all --parallel watch serve",
+        "serve": "browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify",
+        "prepare": "husky"
+    },
+    "lint-staged": {
+        "*.{js,ts}": ["biome format", "biome lint", "biome check", "tsc --noEmit"]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kakakoi/CatSlayer.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "bugs": {
+        "url": "https://github.com/kakakoi/CatSlayer/issues"
+    },
+    "homepage": "https://github.com/kakakoi/CatSlayer#readme",
+    "devDependencies": {
+        "@biomejs/biome": "^1.5.3",
+        "@types/node": "^22.13.4",
+        "browser-sync": "^3.0.3",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.4.3",
+        "npm-run-all": "^4.1.5",
+        "typescript": "^5.7.3"
+    }
 }

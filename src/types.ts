@@ -147,4 +147,4 @@ export interface IGame {
     restart(): void;
     gameLoop(currentTime: number): void;
     nextStage(): void;
-} 
+}

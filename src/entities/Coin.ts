@@ -26,4 +26,4 @@ export class Coin extends GameObject implements ICoin {
         ctx.strokeStyle = '#FFA500';
         ctx.stroke();
     }
-} 
+}

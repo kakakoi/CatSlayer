@@ -19,7 +19,7 @@ export class AudioManager {
     setupAudio(): void {
         // ユーザーのジェスチャー後に初期化
         if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext)();
+            this.audioContext = new window.AudioContext();
         }
 
         // マスターボリューム
@@ -48,10 +48,7 @@ export class AudioManager {
 
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(
-                440,
-                audioContext.currentTime + 0.1
-            );
+            oscillator.frequency.exponentialRampToValueAtTime(440, audioContext.currentTime + 0.1);
 
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
@@ -71,10 +68,7 @@ export class AudioManager {
 
             oscillator.type = 'square';
             oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(
-                55,
-                audioContext.currentTime + 0.2
-            );
+            oscillator.frequency.exponentialRampToValueAtTime(55, audioContext.currentTime + 0.2);
 
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
@@ -291,4 +285,4 @@ export class AudioManager {
     getMuteState(): boolean {
         return this.isMuted;
     }
-} 
+}

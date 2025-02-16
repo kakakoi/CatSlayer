@@ -1,1 +1,5 @@
-function test(x: unknown) { const unused="test4"; const test="format error"; return x; }
+function test(x) {
+    const unused = 'test6';
+    const test = 'format error';
+    return x;
+}

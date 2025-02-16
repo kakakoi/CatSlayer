@@ -1,17 +1,13 @@
 # Git Hooks関連のルール
 git_hooks:
-  # huskyの使用を禁止
-  forbidden_packages:
-    - husky
-  
-  # simple-git-hooksを使用
+  # 必要なパッケージ
   required_packages:
-    - simple-git-hooks
+    - husky
     - lint-staged
 
   # pre-commitフックの設定
   pre_commit_config:
-    command: "npx lint-staged --verbose"
+    command: "npx lint-staged"
     lint_staged_config:
       "*.{js,ts}":
         - "biome format"
@@ -21,7 +17,18 @@ git_hooks:
 
   # インストール後の手順
   setup_steps:
-    1: "npm uninstall husky"  # もしhuskyがインストールされていたら削除
-    2: "npm install -D simple-git-hooks lint-staged"
-    3: "npm run postinstall"  # Git Hooksの初期化
-    4: "git add .git/hooks/pre-commit"  # 変更をコミットに含める 
+    1: "npm uninstall simple-git-hooks"  # 既存のGit Hooks管理ツールを削除
+    2: "rm -rf .git/hooks/*"  # 既存のGit Hooksをクリーンアップ
+    3: "npm install -D husky lint-staged"  # 必要なパッケージをインストール
+    4: "npx husky init"  # Huskyを初期化
+    5: "npx husky add .husky/pre-commit 'npx lint-staged'"  # pre-commitフックを設定
+
+  # トラブルシューティング
+  troubleshooting:
+    1: "pre-commitフックが実行されない場合":
+      - ".husky/pre-commitの内容を確認"
+      - "chmod ug+x .husky/* で実行権限を確認"
+      - "setup_stepsを順番に実行"
+    2: "lint-stagedが動作しない場合":
+      - "package.jsonのlint-staged設定を確認"
+      - "npx lint-staged --debugで詳細なログを確認" 
