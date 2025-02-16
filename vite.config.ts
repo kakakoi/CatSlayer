@@ -8,12 +8,12 @@ export default defineConfig({
         open: true,
         watch: {
             usePolling: true,
-            ignored: ['**/node_modules/**', '**/dist/**']
-        }
+            ignored: ['**/node_modules/**', '**/dist/**'],
+        },
     },
     build: {
         outDir: 'dist',
         emptyOutDir: true,
-        sourcemap: true
-    }
-}); 
+        sourcemap: true,
+    },
+});
