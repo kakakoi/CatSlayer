@@ -14,14 +14,8 @@
         "health-check": "node scripts/health-check.js"
     },
     "lint-staged": {
-        "{src,scripts}/**/*.{ts,js}": [
-            "biome format",
-            "biome lint",
-            "biome check"
-        ],
-        "src/**/*.ts": [
-            "bash -c 'tsc --noEmit'"
-        ]
+        "{src,scripts}/**/*.{ts,js}": ["biome format", "biome lint", "biome check"],
+        "src/**/*.ts": ["bash -c 'tsc --noEmit'"]
     },
     "repository": {
         "type": "git",

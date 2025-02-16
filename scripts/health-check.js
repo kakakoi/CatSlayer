@@ -14,9 +14,11 @@ async function waitForServer(url, timeout) {
         try {
             const response = await fetch(url);
             if (response.status === 200) {
+                console.log('✅ Server is ready');
                 return true;
             }
-        } catch (error) {
+        } catch (_error) {
+            console.log(`⏳ Waiting for server... (${Math.round((Date.now() - start) / 1000)}s)`);
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
     }
@@ -32,6 +34,10 @@ async function runHealthCheck() {
             shell: true,
             cwd: resolve(__dirname, '..'),
         });
+
+        // サーバーの初期化を待機
+        console.log('⏳ Waiting for server initialization...');
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
         // サーバーの起動を待機
         await waitForServer(SERVER_URL, TIMEOUT);
