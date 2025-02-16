@@ -9,19 +9,13 @@
         "preview": "vite preview",
         "format": "biome format --write .",
         "lint": "biome lint .",
-        "check": "biome check --write .",
+        "check": "biome check --apply .",
         "prepare": "husky",
         "health-check": "node scripts/health-check.js"
     },
     "lint-staged": {
-        "{src,scripts}/**/*.{ts,js}": [
-            "biome format",
-            "biome lint",
-            "biome check"
-        ],
-        "src/**/*.ts": [
-            "bash -c 'tsc --noEmit'"
-        ]
+        "{src,scripts}/**/*.{ts,js}": ["biome format", "biome lint", "biome check"],
+        "src/**/*.ts": ["bash -c 'tsc --noEmit'"]
     },
     "repository": {
         "type": "git",
