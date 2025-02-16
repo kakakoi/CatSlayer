@@ -1,2 +1,1 @@
-// Test file with format errors
-function test(x: unknown) { console.log(x); const unused="test"; }
+function test(x: unknown) { const unused="test"; return x; }
