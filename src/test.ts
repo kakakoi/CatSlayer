@@ -1,1 +1,1 @@
-function test(x: unknown) { const unused="test"; return x; }
+function test(x: unknown) { const unused="test2"; const test="format error"; return x; }
