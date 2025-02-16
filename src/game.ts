@@ -8,8 +8,8 @@ import {
     type GameState,
     type TouchState,
     type KeyState,
-    Direction,
-    PlayerColors,
+    type Direction,
+    type PlayerColors,
     type EnemyType,
     type MovePattern,
 } from './types.js';
