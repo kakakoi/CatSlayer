@@ -13,6 +13,7 @@
     "start": "npm run build && node dist/game.js",
     "dev": "npm-run-all --parallel watch serve",
     "serve": "browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify",
+    "prepare": "simple-git-hooks",
     "postinstall": "simple-git-hooks"
   },
   "simple-git-hooks": {
