@@ -41,6 +41,7 @@ export class Game implements IGame {
     private audioManager: AudioManager;
 
     constructor() {
+        console.log('🐯 CatSlayer Game Starting...');
         const canvas = document.getElementById('gameCanvas');
         if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
             throw new Error('Canvas element not found');
@@ -169,6 +170,29 @@ export class Game implements IGame {
             joystickRadius: 50, // ジョイスティックの移動半径
         };
 
+        // サウンドボタンの判定を行う共通関数
+        const checkSoundButtonClick = (clientX: number, clientY: number): boolean => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
+                this.audioManager.toggleSound();
+                return true;
+            }
+            return false;
+        };
+
+        // マウスクリックイベントの追加
+        this.canvas.addEventListener('click', (e) => {
+            if (this.gameState === 'gameover') {
+                this.restart();
+                return;
+            }
+            
+            checkSoundButtonClick(e.clientX, e.clientY);
+        });
+
         // タッチ開始時の処理を更新
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -179,13 +203,9 @@ export class Game implements IGame {
             }
 
             const touch = e.touches[0];
-            const rect = this.canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
+            
             // サウンドボタンの判定
-            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
-                this.audioManager.toggleSound();
+            if (checkSoundButtonClick(touch.clientX, touch.clientY)) {
                 return;
             }
 
@@ -202,10 +222,10 @@ export class Game implements IGame {
 
             // タッチ開始位置を保存
             this.touchState.isMoving = true;
-            this.touchState.startX = x;
-            this.touchState.startY = y;
-            this.touchState.currentX = x;
-            this.touchState.currentY = y;
+            this.touchState.startX = touch.clientX;
+            this.touchState.startY = touch.clientY;
+            this.touchState.currentX = touch.clientX;
+            this.touchState.currentY = touch.clientY;
         });
 
         // タッチ移動時の処理を更新
