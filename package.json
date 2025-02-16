@@ -2,12 +2,16 @@
   "name": "catslayer",
   "version": "1.0.0",
   "description": "このゲームは8-bitスタイルのアクションゲームで、プレイヤーは剣士となって、様々な種類の虎型の敵と戦います。",
-  "main": "game.js",
+  "main": "dist/game.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check --apply ."
+    "check": "biome check --apply .",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "npm run build && node dist/game.js",
+    "dev": "tsc -w"
   },
   "repository": {
     "type": "git",
@@ -16,12 +20,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/kakakoi/CatSlayer/issues"
   },
   "homepage": "https://github.com/kakakoi/CatSlayer#readme",
   "devDependencies": {
-    "@biomejs/biome": "^1.5.3"
+    "@biomejs/biome": "^1.5.3",
+    "@types/node": "^22.13.4",
+    "typescript": "^5.7.3"
   }
 }

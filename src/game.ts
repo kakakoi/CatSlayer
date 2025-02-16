@@ -1,14 +1,31 @@
+import {
+    IGame,
+    IGameObject,
+    ICoin,
+    IEnemy,
+    IPlayer,
+    ISpawner,
+    GameState,
+    TouchState,
+    KeyState,
+    Direction,
+    PlayerColors,
+    SoundName,
+    EnemyType,
+    MovePattern
+} from './types';
+
 // ゲームオブジェクトの基本クラス
-class GameObject {
-    constructor(x, y, width, height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
+class GameObject implements IGameObject {
+    constructor(
+        public x: number,
+        public y: number,
+        public width: number,
+        public height: number
+    ) {}
 
     // 衝突判定
-    collidesWith(other) {
+    collidesWith(other: IGameObject): boolean {
         return (
             this.x < other.x + other.width &&
             this.x + this.width > other.x &&
@@ -19,20 +36,22 @@ class GameObject {
 }
 
 // コインクラス
-class Coin extends GameObject {
-    constructor(x, y) {
+class Coin extends GameObject implements ICoin {
+    public collected: boolean = false;
+    public value: number = 10;
+    public animationOffset: number;
+
+    constructor(x: number, y: number) {
         super(x, y, 20, 20);
-        this.collected = false;
-        this.value = 10;
         this.animationOffset = Math.random() * Math.PI * 2;
     }
 
-    update(time) {
+    update(time: number): void {
         // 上下に浮遊するアニメーション
         this.y += Math.sin(time / 500 + this.animationOffset) * 0.5;
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D): void {
         if (this.collected) return;
 
         ctx.fillStyle = '#FFD700';
@@ -45,10 +64,19 @@ class Coin extends GameObject {
 }
 
 // 敵スポナークラス
-class Spawner extends GameObject {
-    constructor(x, y, spawnInterval = 3000) {
+class Spawner extends GameObject implements ISpawner {
+    public id: number = 0;
+    public lastSpawnTime: number;
+    public active: boolean;
+    public radius: number;
+    public progress: number;
+    public maxEnemiesAlive: number;
+    public enemyCount: number;
+    public spawnedEnemies: IEnemy[];
+    public spawnEffect: number;
+
+    constructor(x: number, y: number, public spawnInterval: number = 3000) {
         super(x, y, 40, 40);
-        this.spawnInterval = spawnInterval;
         this.lastSpawnTime = Date.now();
         this.active = false;
         this.radius = 25;
@@ -59,7 +87,7 @@ class Spawner extends GameObject {
         this.spawnEffect = 0;
     }
 
-    update(game, currentTime) {
+    update(game: IGame, currentTime: number): void {
         if (!this.active) return;
 
         // スポーンエフェクトの更新
@@ -89,8 +117,8 @@ class Spawner extends GameObject {
         }
     }
 
-    spawnEnemy(game) {
-        const types = ['normal', 'fast', 'tank', 'hunter', 'random'];
+    spawnEnemy(game: IGame): void {
+        const types: EnemyType[] = ['normal', 'fast', 'tank', 'hunter', 'random'];
         const randomType = types[Math.floor(Math.random() * types.length)];
         const enemy = new Enemy(
             this.x + this.width / 2 - 15,
@@ -107,7 +135,7 @@ class Spawner extends GameObject {
         game.enemies.push(enemy);
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D): void {
         // 穴の描画（黒い円）
         ctx.beginPath();
         ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.radius, 0, Math.PI * 2);
@@ -156,8 +184,28 @@ class Spawner extends GameObject {
 }
 
 // プレイヤークラス
-class Player extends GameObject {
-    constructor(x, y) {
+class Player extends GameObject implements IPlayer {
+    public speed: number;
+    public direction: Direction;
+    public level: number;
+    public exp: number;
+    public expToNextLevel: number;
+    public isAttacking: boolean;
+    public attackDuration: number;
+    public attackTimer: number;
+    public attackRange: number;
+    public attackPower: number;
+    public attackFrame: number;
+    public autoAttackRange: number;
+    public autoAttackCooldown: number;
+    public lastAutoAttackTime: number;
+    public animationFrame: number;
+    public walkFrame: number;
+    public colors: PlayerColors;
+    public score: number;
+    public powerUps: number;
+
+    constructor(x: number, y: number) {
         super(x, y, 32, 32);
         this.speed = 5;
         this.direction = 'right';
@@ -196,7 +244,7 @@ class Player extends GameObject {
         this.powerUps = 0;
     }
 
-    update(game) {
+    update(game: IGame): void {
         // 移動処理
         if (game.keys.ArrowLeft) {
             this.x -= this.speed;
@@ -274,7 +322,7 @@ class Player extends GameObject {
         }
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D): void {
         ctx.save();
 
         // キャラクターの基本位置
@@ -407,7 +455,7 @@ class Player extends GameObject {
         ctx.restore();
     }
 
-    levelUp() {
+    levelUp(): void {
         this.level++;
         this.exp -= this.expToNextLevel;
         this.expToNextLevel = Math.floor(this.expToNextLevel * 1.5);
@@ -420,14 +468,14 @@ class Player extends GameObject {
         this.autoAttackCooldown = Math.max(200, this.autoAttackCooldown - 20);
     }
 
-    powerUp() {
+    powerUp(): void {
         this.powerUps++;
         this.attackPower = 1 + this.powerUps * 0.5;
         this.attackRange += 5;
     }
 
     // レベルアップ処理を追加
-    gainExp(amount) {
+    gainExp(amount: number): void {
         this.exp += amount;
         while (this.exp >= this.expToNextLevel) {
             this.levelUp();
@@ -435,7 +483,7 @@ class Player extends GameObject {
     }
 
     // 攻撃判定メソッドを追加
-    checkAttackCollision(enemy) {
+    checkAttackCollision(enemy: IEnemy): boolean {
         if (!this.isAttacking) return false;
 
         const centerX = this.x + this.width / 2;
@@ -484,10 +532,29 @@ class Player extends GameObject {
 }
 
 // 敵クラス
-class Enemy extends GameObject {
-    constructor(x, y, type = 'normal') {
+class Enemy extends GameObject implements IEnemy {
+    public isAlive: boolean;
+    public startX: number;
+    public startY: number;
+    public spawning: boolean;
+    public spawnProgress: number;
+    public spawnDuration: number;
+    public spawnStartTime: number;
+    public speed: number;
+    public moveRange: number;
+    public scoreValue: number;
+    public color: string;
+    public movePattern: MovePattern;
+    public spawnerId: number = 0;
+    public direction: number;
+    public zigzagAngle: number;
+    public directionChangeTimer: number;
+    public dx: number;
+    public dy: number;
+    public deathTime: number | null;
+
+    constructor(x: number, y: number, public type: EnemyType = 'normal') {
         super(x, y, 30, 30);
-        this.type = type;
         this.isAlive = true;
         this.startX = x;
         this.startY = y;
@@ -495,6 +562,12 @@ class Enemy extends GameObject {
         this.spawnProgress = 0;
         this.spawnDuration = 500;
         this.spawnStartTime = Date.now();
+        this.direction = 1;
+        this.zigzagAngle = 0;
+        this.directionChangeTimer = 0;
+        this.dx = Math.random() * 2 - 1;
+        this.dy = Math.random() * 2 - 1;
+        this.deathTime = null;
 
         // タイプごとの特性を設定
         switch (type) {
@@ -504,7 +577,6 @@ class Enemy extends GameObject {
                 this.scoreValue = 80;
                 this.color = '#FF0000';
                 this.movePattern = 'zigzag';
-                this.zigzagAngle = 0;
                 break;
             case 'tank': // 遅いが価値が高い敵（紫）
                 this.speed = 1.5;
@@ -528,9 +600,6 @@ class Enemy extends GameObject {
                 this.scoreValue = 100;
                 this.color = '#00FF00';
                 this.movePattern = 'random';
-                this.directionChangeTimer = 0;
-                this.dx = Math.random() * 2 - 1;
-                this.dy = Math.random() * 2 - 1;
                 break;
             default: // 通常の敵（青）
                 this.speed = 3;
@@ -540,11 +609,9 @@ class Enemy extends GameObject {
                 this.movePattern = 'circle';
                 break;
         }
-
-        this.direction = 1;
     }
 
-    update(game) {
+    update(game: IGame): void {
         if (!this.isAlive) return;
 
         if (this.spawning) {
@@ -618,7 +685,7 @@ class Enemy extends GameObject {
         }
     }
 
-    render(ctx) {
+    render(ctx: CanvasRenderingContext2D): void {
         if (!this.isAlive) return;
 
         if (this.spawning) {
@@ -638,7 +705,7 @@ class Enemy extends GameObject {
         }
     }
 
-    drawTiger(ctx, x, y, width, height, alpha) {
+    drawTiger(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, alpha: number): void {
         ctx.save();
 
         // 体の基本色
@@ -738,28 +805,52 @@ class Enemy extends GameObject {
 }
 
 // ゲームクラス
-class Game {
+class Game implements IGame {
+    public canvas: HTMLCanvasElement;
+    public ctx: CanvasRenderingContext2D;
+    public keys: KeyState = {};
+    public player: IPlayer;
+    public enemies: IEnemy[] = [];
+    public coins: ICoin[] = [];
+    public spawners: ISpawner[] = [];
+    public isRunning: boolean = false;
+    public gameState: GameState = 'playing';
+    public score: number = 0;
+    public stage: number = 1;
+    public startTime: number = Date.now();
+    public stageTime: number = 60;
+    public remainingTime: number = this.stageTime;
+    public audioContext: AudioContext | null = null;
+    public masterGain: GainNode | null = null;
+    public isMuted: boolean = false;
+    public bgmPlaying: boolean = false;
+    public touchState: TouchState;
+    public nextStageStartTime: number = 0;
+    private coinSound: () => void = () => {};
+    private enemyDeathSound: () => void = () => {};
+    private levelUpSound: () => void = () => {};
+    private gameOverSound: () => void = () => {};
+    private stageClearSound: () => void = () => {};
+
     constructor() {
-        // キャンバスの設定
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        const canvas = document.getElementById('gameCanvas');
+        if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+            throw new Error('Canvas element not found');
+        }
+        this.canvas = canvas;
 
-        // 入力処理の初期化
-        this.keys = {};
-        this.initializeInputs();
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Failed to get 2D context');
+        }
+        this.ctx = ctx;
 
-        // ゲームオブジェクトの初期化
         this.player = new Player(50, 50);
+        this.initializeInputs();
+        this.setupSpawners();
+        this.resize();
 
-        // ゲームの状態
-        this.isRunning = false;
-
-        // 配列の初期化
-        this.enemies = [];
-        this.coins = [];
-        this.spawners = [];
-
-        // タッチ入力の状態管理
+        // タッチ状態の初期化
         this.touchState = {
             isMoving: false,
             startX: 0,
@@ -768,35 +859,14 @@ class Game {
             currentY: 0,
             lastTapTime: 0,
             doubleTapDelay: 300,
-            joystickRadius: 50, // ジョイスティックの移動半径
+            joystickRadius: 50
         };
 
-        // 画面サイズの設定
-        this.resize();
         window.addEventListener('resize', () => this.resize());
-
-        // ゲーム状態の初期化
-        this.gameState = 'playing';
-        this.score = 0;
-        this.startTime = Date.now();
-
-        // スポナーの初期化（最初は非アクティブ）
-        this.setupSpawners();
-
-        // Web Audio APIの初期化を遅延させる
-        this.audioContext = null;
-        this.isMuted = false;
-        this.bgmPlaying = false;
-
-        // ステージ関連の新しいプロパティ
-        this.stage = 1;
-        this.stageTime = 60; // 各ステージの制限時間（秒）
-        this.remainingTime = this.stageTime;
-        this.nextStageStartTime = Date.now() + 5000; // 5秒後に次のステージ
     }
 
     // スポナーのセットアップを別メソッドに分離
-    setupSpawners() {
+    setupSpawners(): void {
         const margin = 100;
 
         // スポナーを4つの角に配置
@@ -826,7 +896,7 @@ class Game {
     }
 
     // 画面サイズの調整
-    resize() {
+    resize(): void {
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
 
@@ -860,7 +930,7 @@ class Game {
     }
 
     // 入力処理の初期化を更新
-    initializeInputs() {
+    initializeInputs(): void {
         // キーボード入力
         window.addEventListener('keydown', (e) => {
             if (this.gameState === 'gameover' && e.key === ' ') {
@@ -972,7 +1042,7 @@ class Game {
     }
 
     // 新しいメソッド：移動キーをリセット
-    resetMovementKeys() {
+    resetMovementKeys(): void {
         this.keys.ArrowRight = false;
         this.keys.ArrowLeft = false;
         this.keys.ArrowDown = false;
@@ -980,7 +1050,7 @@ class Game {
     }
 
     // ゲームの更新処理
-    update() {
+    update(): void {
         if (this.gameState === 'gameover') {
             this.bgmPlaying = false;
             this.playSound('gameOver');
@@ -1071,7 +1141,7 @@ class Game {
 
         // 死亡した敵を配列から削除（定期的なクリーンアップ）
         this.enemies = this.enemies.filter(
-            (enemy) => enemy.isAlive || Date.now() - enemy.deathTime < 1000
+            (enemy) => enemy.isAlive || (enemy.deathTime && Date.now() - enemy.deathTime < 1000)
         );
 
         // 使用済みのコインを配列から削除
@@ -1079,7 +1149,7 @@ class Game {
     }
 
     // 描画処理
-    render() {
+    render(): void {
         // 画面クリア
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -1167,7 +1237,7 @@ class Game {
         }
     }
 
-    renderStageClear() {
+    renderStageClear(): void {
         // 半透明の青背景
         this.ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1192,7 +1262,7 @@ class Game {
         );
     }
 
-    renderGameOver() {
+    renderGameOver(): void {
         // 半透明の黒背景
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1220,7 +1290,7 @@ class Game {
         );
     }
 
-    restart() {
+    restart(): void {
         this.gameState = 'playing';
         this.score = 0;
         this.stage = 1;
@@ -1255,7 +1325,7 @@ class Game {
     }
 
     // ゲームループ
-    gameLoop(currentTime) {
+    gameLoop(currentTime: number): void {
         if (!this.isRunning) return;
 
         this.update();
@@ -1265,7 +1335,7 @@ class Game {
     }
 
     // ゲーム開始
-    start() {
+    start(): void {
         if (!this.isRunning) {
             this.isRunning = true;
 
@@ -1297,90 +1367,101 @@ class Game {
     }
 
     // オーディオシステムのセットアップ
-    setupAudio() {
+    setupAudio(): void {
         // ユーザーのジェスチャー後に初期化
         if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.audioContext = new (window.AudioContext)();
         }
 
         // マスターボリューム
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = 0.3;
-        this.masterGain.connect(this.audioContext.destination);
+        if (this.audioContext && !this.masterGain) {
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.gain.value = 0.3;
+            this.masterGain.connect(this.audioContext.destination);
+        }
 
         // 効果音の設定
         this.setupSoundEffects();
     }
 
     // 効果音の生成
-    setupSoundEffects() {
+    setupSoundEffects(): void {
+        if (!this.audioContext || !this.masterGain) return;
+
+        const audioContext = this.audioContext;
+        const masterGain = this.masterGain;
+
         // コイン取得音
         this.coinSound = () => {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            if (!audioContext || !masterGain) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime); // A5
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(
                 440,
-                this.audioContext.currentTime + 0.1
-            ); // A4
+                audioContext.currentTime + 0.1
+            );
 
-            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
 
             oscillator.connect(gainNode);
-            gainNode.connect(this.masterGain);
+            gainNode.connect(masterGain);
 
             oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.1);
+            oscillator.stop(audioContext.currentTime + 0.1);
         };
 
         // 敵撃破音
         this.enemyDeathSound = () => {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            if (!audioContext || !masterGain) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
             oscillator.type = 'square';
-            oscillator.frequency.setValueAtTime(220, this.audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(
                 55,
-                this.audioContext.currentTime + 0.2
+                audioContext.currentTime + 0.2
             );
 
-            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
 
             oscillator.connect(gainNode);
-            gainNode.connect(this.masterGain);
+            gainNode.connect(masterGain);
 
             oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.2);
+            oscillator.stop(audioContext.currentTime + 0.2);
         };
 
         // レベルアップ音
         this.levelUpSound = () => {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            if (!audioContext || !masterGain) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(554.37, this.audioContext.currentTime + 0.1);
-            oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.2);
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(554.37, audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.2);
 
-            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
 
             oscillator.connect(gainNode);
-            gainNode.connect(this.masterGain);
+            gainNode.connect(masterGain);
 
             oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.3);
+            oscillator.stop(audioContext.currentTime + 0.3);
         };
 
         // ゲームオーバー音
         this.gameOverSound = () => {
-            const time = this.audioContext.currentTime;
+            if (!audioContext || !masterGain) return;
+            const time = audioContext.currentTime;
 
             // RPG風のメロディを定義
             const notes = [
@@ -1395,8 +1476,8 @@ class Game {
             // 各音を順番に再生
             let currentTime = time;
             for (const note of notes) {
-                const oscillator = this.audioContext.createOscillator();
-                const gainNode = this.audioContext.createGain();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
                 oscillator.type = 'sine';
                 oscillator.frequency.value = note.freq;
@@ -1405,7 +1486,7 @@ class Game {
                 gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration - 0.1);
 
                 oscillator.connect(gainNode);
-                gainNode.connect(this.masterGain);
+                gainNode.connect(masterGain);
 
                 oscillator.start(currentTime);
                 oscillator.stop(currentTime + note.duration);
@@ -1414,11 +1495,11 @@ class Game {
             }
 
             // 軽いリバーブ効果
-            const convolver = this.audioContext.createConvolver();
+            const convolver = audioContext.createConvolver();
             const reverbTime = 1; // リバーブ時間を短く
-            const sampleRate = this.audioContext.sampleRate;
+            const sampleRate = audioContext.sampleRate;
             const impulseLength = sampleRate * reverbTime;
-            const impulse = this.audioContext.createBuffer(2, impulseLength, sampleRate);
+            const impulse = audioContext.createBuffer(2, impulseLength, sampleRate);
 
             for (let channel = 0; channel < 2; channel++) {
                 const impulseData = impulse.getChannelData(channel);
@@ -1428,41 +1509,42 @@ class Game {
             }
 
             convolver.buffer = impulse;
-            const reverbGain = this.audioContext.createGain();
+            const reverbGain = audioContext.createGain();
             reverbGain.gain.value = 0.1; // リバーブを控えめに
 
             convolver.connect(reverbGain);
-            reverbGain.connect(this.masterGain);
+            reverbGain.connect(masterGain);
         };
 
         // ステージクリア音を追加
         this.stageClearSound = () => {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            if (!audioContext || !masterGain) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime); // C5
-            oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1); // E5
-            oscillator.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.2); // G5
-            oscillator.frequency.setValueAtTime(1046.5, this.audioContext.currentTime + 0.3); // C6
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+            oscillator.frequency.setValueAtTime(1046.5, audioContext.currentTime + 0.3); // C6
 
-            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
 
             oscillator.connect(gainNode);
-            gainNode.connect(this.masterGain);
+            gainNode.connect(masterGain);
 
             oscillator.start();
-            oscillator.stop(this.audioContext.currentTime + 0.4);
+            oscillator.stop(audioContext.currentTime + 0.4);
         };
     }
 
     // BGMの生成と再生
-    playBGM() {
+    playBGM(): void {
         if (!this.audioContext || this.bgmPlaying) return;
         this.bgmPlaying = true;
 
-        const playNote = (frequency, startTime, duration) => {
+        const playNote = (frequency: number, startTime: number, duration: number) => {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
 
@@ -1500,7 +1582,7 @@ class Game {
             440, // メロディ4
         ];
 
-        const playSequence = (time) => {
+        const playSequence = (time: number) => {
             sequence.forEach((freq, index) => {
                 playNote(freq, time + index * beatDuration, beatDuration);
             });
@@ -1518,12 +1600,14 @@ class Game {
     }
 
     // サウンド管理メソッドの更新
-    toggleSound() {
+    toggleSound(): void {
         this.isMuted = !this.isMuted;
-        this.masterGain.gain.value = this.isMuted ? 0 : 0.3;
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.isMuted ? 0 : 0.3;
+        }
     }
 
-    playSound(soundName) {
+    playSound(soundName: SoundName): void {
         if (!this.audioContext || this.isMuted) return;
 
         switch (soundName) {
@@ -1549,7 +1633,7 @@ class Game {
     }
 
     // ステージクリア時の処理を追加
-    nextStage() {
+    nextStage(): void {
         // 敵とコインを完全に消去
         this.enemies = [];
         this.coins = [];
@@ -1587,7 +1671,7 @@ class Game {
     }
 
     // drawGridメソッドを追加
-    drawGrid() {
+    drawGrid(): void {
         this.ctx.strokeStyle = '#CCCCCC';
         this.ctx.lineWidth = 0.5;
 
