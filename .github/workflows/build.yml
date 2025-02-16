@@ -46,6 +46,9 @@ jobs:
       - name: Build TypeScript and Vite
         run: npm run build
 
+      - name: Run health check
+        run: npm run health-check
+
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
