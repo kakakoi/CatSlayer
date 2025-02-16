@@ -1541,12 +1541,15 @@ class Game implements IGame {
 
     // BGMの生成と再生
     playBGM(): void {
-        if (!this.audioContext || this.bgmPlaying) return;
+        if (!this.audioContext || !this.masterGain || this.bgmPlaying) return;
         this.bgmPlaying = true;
 
+        const audioContext = this.audioContext;
+        const masterGain = this.masterGain;
+
         const playNote = (frequency: number, startTime: number, duration: number) => {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
 
             oscillator.type = 'sine';
             oscillator.frequency.value = frequency;
@@ -1555,7 +1558,7 @@ class Game implements IGame {
             gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration - 0.1);
 
             oscillator.connect(gainNode);
-            gainNode.connect(this.masterGain);
+            gainNode.connect(masterGain);
 
             oscillator.start(startTime);
             oscillator.stop(startTime + duration);
