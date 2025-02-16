@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+      - development
 
 # GitHub Pagesへのデプロイ権限を設定
 permissions:
@@ -25,32 +29,38 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
-      - name: Build TypeScript
+      - name: Format check
+        run: npm run format
+
+      - name: Lint check
+        run: npm run lint
+
+      - name: Type check
+        run: npm run check
+
+      - name: Build TypeScript and Vite
         run: npm run build
 
+      - name: Run health check
+        run: npm run health-check
+
       - name: Setup Pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
 
-      - name: Copy static files
-        run: |
-          cp index.html dist/
-          cp -r assets dist/ || true
-          cp favicon.ico dist/ || true
-          cp apple-touch-icon.png dist/ || true
-          cp android-chrome-192x192.png dist/ || true
-          cp android-chrome-512x512.png dist/ || true
-          cp favicon-32x32.png dist/ || true
-          cp favicon-16x16.png dist/ || true
-
       - name: Upload artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     

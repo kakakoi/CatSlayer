@@ -1,0 +1,102 @@
+# Git Hooks関連のルール
+git_hooks:
+  # 必要なパッケージ
+  required_packages:
+    - husky
+    - lint-staged
+
+  # pre-commitフックの設定
+  pre_commit_config:
+    command: "npx lint-staged"
+    lint_staged_config:
+      "src/**/*.ts":
+        - "biome format"
+        - "biome lint"
+        - "biome check"
+        - "bash -c 'tsc --noEmit'"
+
+  # インストール後の手順
+  setup_steps:
+    1: "npm uninstall simple-git-hooks"  # 既存のGit Hooks管理ツールを削除
+    2: "rm -rf .git/hooks/*"  # 既存のGit Hooksをクリーンアップ
+    3: "npm install -D husky lint-staged"  # 必要なパッケージをインストール
+    4: "npx husky init"  # Huskyを初期化
+    5: "npx husky add .husky/pre-commit 'npx lint-staged'"  # pre-commitフックを設定
+
+  # トラブルシューティング
+  troubleshooting:
+    1: "pre-commitフックが実行されない場合":
+      - ".husky/pre-commitの内容を確認"
+      - "chmod ug+x .husky/* で実行権限を確認"
+      - "setup_stepsを順番に実行"
+    2: "lint-stagedが動作しない場合":
+      - "package.jsonのlint-staged設定を確認"
+      - "npx lint-staged --debugで詳細なログを確認"
+    3: "TypeScriptの型チェックが動作しない場合":
+      - "lint-stagedのtscコマンドをbash -cでラップしているか確認"
+      - "tsconfig.jsonのexcludeに*.jsが含まれているか確認"
+
+# CI/CD関連のルール
+ci_cd:
+  # GitHub Actions関連
+  github_actions:
+    # ビルドの確認手順
+    build_check:
+      1: "gh run list -L 5 | catでログを確認"
+      2: "gh run view [run-id] | catで詳細を確認"
+      3: "gh run view [run-id] --log-failedで失敗ログを確認"
+
+    # トラブルシューティング
+    troubleshooting:
+      1: "ビルドが失敗する場合":
+        - "ローカルでnpm run buildを実行して問題を特定"
+        - "tsconfig.jsonの設定を確認"
+        - "依存関係のバージョンを確認"
+      2: "型チェックが失敗する場合":
+        - "tsc --noEmitを実行して問題を特定"
+        - "必要な型定義ファイルがインストールされているか確認"
+
+# コード品質関連のルール
+code_quality:
+  # Biome関連
+  biome:
+    commands:
+      format: "biome format --write ."
+      lint: "biome lint ."
+      check: "biome check --apply ."
+
+    # トラブルシューティング
+    troubleshooting:
+      1: "フォーマットが適用されない場合":
+        - "biome.jsonの設定を確認"
+        - "対象ファイルがignoreされていないか確認"
+      2: "リンターエラーが解決できない場合":
+        - "biome checkを実行して詳細を確認"
+        - "--verboseオプションを使用してより詳細な情報を取得"
+
+# 開発フロー関連のルール
+development_flow:
+  # コミット前のチェックリスト
+  pre_commit_checklist:
+    1: "ローカルでビルドが成功することを確認"
+    2: "lint-stagedのチェックが通ることを確認"
+    3: "テストが成功することを確認"
+
+  # プッシュ後のチェックリスト
+  post_push_checklist:
+    1: "GitHub Actionsのビルドが成功することを確認"
+    2: "依存関係の脆弱性警告を確認"
+    3: "プルリクエストのレビューを依頼"
+
+# 問題解決のエスカレーションポリシー
+troubleshooting_escalation:
+  policy:
+    1: "最初の解決策を試す"
+    2: "解決策が失敗した場合、別のアプローチを試す"
+    3: "2回解決に失敗した場合":
+      - "GitHub Issues、Stack Overflow、公式ドキュメントで最新の情報を確認"
+      - "類似の問題の解決方法を探す"
+      - "パッケージのリリースノートや変更履歴を確認"
+      - "コミュニティのディスカッションを確認"
+    4: "情報収集後に新しい解決策を実装"
+    5: "必要に応じて一時的な回避策を検討" 
