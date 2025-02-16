@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     root: '.',
+    base: '/CatSlayer/',
     publicDir: 'public',
     server: {
         port: 3000,
