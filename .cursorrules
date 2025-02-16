@@ -42,9 +42,10 @@ ci_cd:
   github_actions:
     # ビルドの確認手順
     build_check:
-      1: "gh run list -L 5 | catでログを確認"
-      2: "gh run view [run-id] | catで詳細を確認"
-      3: "gh run view [run-id] --log-failedで失敗ログを確認"
+      1: "echo '⏳ Waiting for CI to start...' && sleep 60"  # 1分待機
+      2: "gh run list -L 5 | cat"  # ログを確認
+      3: "gh run view [run-id] | cat"  # 詳細を確認
+      4: "gh run view [run-id] --log-failed"  # 失敗ログを確認
 
     # トラブルシューティング
     troubleshooting:
