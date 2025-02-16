@@ -41,24 +41,12 @@ jobs:
       - name: Type check
         run: npm run check
 
-      - name: Build TypeScript
+      - name: Build TypeScript and Vite
         run: npm run build
 
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
-
-      - name: Copy static files
-        if: github.ref == 'refs/heads/main'
-        run: |
-          cp index.html dist/
-          cp -r assets dist/ || true
-          cp favicon.ico dist/ || true
-          cp apple-touch-icon.png dist/ || true
-          cp android-chrome-192x192.png dist/ || true
-          cp android-chrome-512x512.png dist/ || true
-          cp favicon-32x32.png dist/ || true
-          cp favicon-16x16.png dist/ || true
 
       - name: Upload artifact
         if: github.ref == 'refs/heads/main'
