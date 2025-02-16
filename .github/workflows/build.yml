@@ -29,8 +29,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: Format check
         run: npm run format
