@@ -4,15 +4,12 @@
     "description": "このゲームは8-bitスタイルのアクションゲームで、プレイヤーは剣士となって、様々な種類の虎型の敵と戦います。",
     "main": "dist/game.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
         "format": "biome format --write .",
         "lint": "biome lint .",
         "check": "biome check --apply .",
-        "build": "tsc",
-        "watch": "tsc -w",
-        "start": "npm run build && node dist/game.js",
-        "dev": "npm-run-all --parallel watch serve",
-        "serve": "browser-sync start --server --files 'dist/**/*.js, *.html' --no-notify",
         "prepare": "husky"
     },
     "lint-staged": {
@@ -38,10 +35,9 @@
     "devDependencies": {
         "@biomejs/biome": "^1.5.3",
         "@types/node": "^22.13.4",
-        "browser-sync": "^3.0.3",
         "husky": "^9.1.7",
         "lint-staged": "^15.4.3",
-        "npm-run-all": "^4.1.5",
-        "typescript": "^5.7.3"
+        "typescript": "^5.7.3",
+        "vite": "^5.1.3"
     }
 }
