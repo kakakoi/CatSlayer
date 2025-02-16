@@ -9,7 +9,7 @@
         "preview": "vite preview",
         "format": "biome format --write .",
         "lint": "biome lint .",
-        "check": "biome check --apply .",
+        "check": "biome check --write .",
         "prepare": "husky",
         "health-check": "node scripts/health-check.js"
     },
