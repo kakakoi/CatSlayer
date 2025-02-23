@@ -21,10 +21,13 @@ export class Player extends GameObject implements IPlayer {
     public colors: PlayerColors;
     public score: number;
     public powerUps: number;
+    public isMoving: boolean;
+    public walkAnimationSpeed: number;
+    public capeOffset: number;
 
     constructor(x: number, y: number) {
         super(x, y, 32, 32);
-        this.speed = 5;
+        this.speed = 2.5;
         this.direction = 'right';
 
         // レベルシステム
@@ -48,6 +51,9 @@ export class Player extends GameObject implements IPlayer {
         // アニメーション用
         this.animationFrame = 0;
         this.walkFrame = 0;
+        this.isMoving = false;
+        this.walkAnimationSpeed = 0.2;
+        this.capeOffset = 0;
         this.colors = {
             armor: '#4444FF',
             skin: '#FFD700',
@@ -62,6 +68,19 @@ export class Player extends GameObject implements IPlayer {
     }
 
     update(game: IGame): void {
+        // 移動状態の更新
+        this.isMoving =
+            game.keys.ArrowLeft || game.keys.ArrowRight || game.keys.ArrowUp || game.keys.ArrowDown;
+
+        // アニメーションフレームの更新
+        if (this.isMoving) {
+            this.walkFrame += this.walkAnimationSpeed;
+            this.capeOffset = Math.sin(this.walkFrame) * 2;
+        } else {
+            this.walkFrame = 0;
+            this.capeOffset = 0;
+        }
+
         // 移動処理
         if (game.keys.ArrowLeft) {
             this.x -= this.speed;
@@ -141,132 +160,162 @@ export class Player extends GameObject implements IPlayer {
 
     render(ctx: CanvasRenderingContext2D): void {
         ctx.save();
+        ctx.translate(this.x, this.y);
 
-        // キャラクターの基本位置
-        const x = Math.floor(this.x);
-        const y = Math.floor(this.y);
-        const w = this.width;
-        const h = this.height;
-
-        // 歩行アニメーション
-        this.walkFrame = (this.walkFrame + 1) % 30;
-        const bounce = Math.sin(this.walkFrame * 0.2) * 2;
-
-        // 向きに応じて反転
-        if (this.direction === 'left') {
+        // キャラクターの向きに応じて反転
+        const isLeftFacing = this.direction === 'left';
+        if (isLeftFacing) {
             ctx.scale(-1, 1);
-            ctx.translate(-x * 2 - w, 0);
         }
 
-        // 体の描画
+        // アニメーションのオフセット計算
+        const legOffset = this.isMoving ? Math.sin(this.walkFrame * Math.PI) * 3 : 0;
+
+        // 影の描画
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(0, 15, 10, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // === 2頭身キャラクターの描画 ===
+
+        // 脚（歩行アニメーション）
         ctx.fillStyle = this.colors.armor;
-        // 胴体（8bitらしい四角形）
-        ctx.fillRect(x + 8, y + 12 + bounce, 16, 16);
+        // 左脚
+        ctx.fillRect(-6, 5 + legOffset, 5, 10);
+        // 右脚
+        ctx.fillRect(1, 5 - legOffset, 5, 10);
 
-        // 頭
-        ctx.fillStyle = this.colors.skin;
-        ctx.fillRect(x + 10, y + 4 + bounce, 12, 12);
+        // マント
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(-8 - this.capeOffset * 0.5, -10, 3, 15);
+        ctx.fillRect(5 + this.capeOffset * 0.5, -10, 3, 15);
 
-        // 髪
-        ctx.fillStyle = this.colors.hair;
-        ctx.fillRect(x + 8, y + 2 + bounce, 16, 6);
+        // 胴体（小さめの四角形）
+        ctx.fillStyle = this.colors.armor;
+        ctx.fillRect(-7, -10, 14, 15);
 
-        // 剣（通常時）
+        // 装飾ライン
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(-7, -5, 14, 2);
+        ctx.fillRect(-7, 0, 14, 2);
+
+        // 頭（大きめの円形）
+        ctx.fillStyle = this.colors.armor;
+        ctx.beginPath();
+        ctx.arc(0, -15, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ヘルメットのバイザー
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(-6, -18, 12, 3);
+
+        // 羽飾り
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(-4, -25, 2, 8);
+        ctx.fillRect(-2, -27, 2, 10);
+        ctx.fillRect(0, -25, 2, 8);
+
+        // 盾（左手に持つ）
         if (!this.isAttacking) {
-            ctx.fillStyle = this.colors.sword;
-            if (this.direction === 'right' || this.direction === 'left') {
-                ctx.fillRect(x + 20, y + 16 + bounce, 60, 18); // 横長さ60px、太さ18px
-            } else if (this.direction === 'up') {
-                ctx.fillRect(x + 14, y - 24 + bounce, 18, 60); // 縦長さ60px、太さ18px
-            } else {
-                ctx.fillRect(x + 14, y + 24 + bounce, 18, 60); // 縦長さ60px、太さ18px
-            }
+            ctx.fillStyle = this.colors.shield;
+            ctx.fillRect(-12, -8, 4, 12);
+            // 盾の装飾
+            ctx.fillStyle = '#8a5a3a';
+            ctx.fillRect(-12, -5, 4, 2);
+            ctx.fillRect(-12, 0, 4, 2);
         }
 
-        // 攻撃エフェクトの描画
-        if (this.isAttacking) {
-            const progress = 1 - this.attackTimer / this.attackDuration;
-            this.attackFrame = Math.floor(progress * 3);
+        // 剣（右手に持つ）
+        if (!this.isAttacking) {
+            // 大剣の柄
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(9, -8, 4, 8);
+            // 柄の装飾
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(9, -6, 4, 4);
 
-            // 剣を振るエフェクト
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 12;
+            // 大剣のつば
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(7, -9, 8, 3);
+
+            // 大剣の刃
+            ctx.fillStyle = this.colors.sword;
+            ctx.fillRect(9, -25, 4, 16);
+
+            // 刃先
             ctx.beginPath();
+            ctx.moveTo(9, -25);
+            ctx.lineTo(11, -28);
+            ctx.lineTo(13, -25);
+            ctx.fill();
 
-            const centerX = x + w / 2;
-            const centerY = y + h / 2;
-            const swingAngle = Math.PI * progress; // 振り下ろしの角度を調整
+            // 刃の装飾ライン
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(10, -24, 2, 15);
+        } else {
+            // 攻撃時の剣の描画（斜めに構える）
+            ctx.save();
+            ctx.translate(9, -8);
+            ctx.rotate(-Math.PI / 4);
 
-            if (this.direction === 'right' || this.direction === 'left') {
-                // 縦振り（上から下）
-                ctx.beginPath();
-                ctx.arc(
-                    centerX,
-                    centerY,
-                    this.attackRange * 1.5,
-                    -Math.PI / 2 - swingAngle / 2, // 上から
-                    Math.PI / 2 - swingAngle / 2, // 下まで
-                    this.direction === 'left'
-                ); // 左向きの場合は逆回転
-                ctx.stroke();
+            // 柄
+            ctx.fillStyle = '#4a4a4a';
+            ctx.fillRect(0, 0, 4, 8);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, 2, 4, 4);
 
-                // 剣の描画
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(-Math.PI / 2 - swingAngle / 2); // 上から始まる回転
-                ctx.fillStyle = this.colors.sword;
-                ctx.fillRect(0, -9, 120, 18);
-                ctx.restore();
-            } else {
-                // 上下方向の場合は横振り
-                ctx.beginPath();
-                const startAngle = this.direction === 'up' ? Math.PI : 0;
-                ctx.arc(
-                    centerX,
-                    centerY,
-                    this.attackRange * 1.5,
-                    startAngle - Math.PI / 3 - swingAngle / 2,
-                    startAngle + Math.PI / 3 - swingAngle / 2
-                );
-                ctx.stroke();
+            // つば
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(-2, -1, 8, 3);
 
-                // 剣の描画
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(startAngle - swingAngle / 2);
-                ctx.fillStyle = this.colors.sword;
-                ctx.fillRect(0, -9, 120, 18);
-                ctx.restore();
-            }
+            // 刃
+            ctx.fillStyle = this.colors.sword;
+            ctx.fillRect(0, -17, 4, 16);
+
+            // 刃先
+            ctx.beginPath();
+            ctx.moveTo(0, -17);
+            ctx.lineTo(2, -20);
+            ctx.lineTo(4, -17);
+            ctx.fill();
+
+            // 装飾ライン
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(1, -16, 2, 15);
+
+            ctx.restore();
+        }
+
+        // 攻撃エフェクト
+        if (this.isAttacking) {
+            const attackFrame = this.attackFrame / this.attackDuration;
+            const opacity = 1 - attackFrame;
 
             // 斬撃エフェクト
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.8 * (1 - progress)})`;
-            ctx.lineWidth = 15;
-            for (let i = 0; i < 3; i++) {
-                const offset = i * 45 * (1 - progress);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(15, -15, this.attackRange * opacity * 0.5, -Math.PI / 4, Math.PI / 2);
+            ctx.stroke();
+
+            // 追加の光の線
+            const lines = 3;
+            for (let i = 0; i < lines; i++) {
+                const lineOpacity = opacity * (1 - i / lines);
+                ctx.strokeStyle = `rgba(200, 230, 255, ${lineOpacity})`;
+                ctx.lineWidth = 1.5 - i * 0.3;
                 ctx.beginPath();
-                if (this.direction === 'right' || this.direction === 'left') {
-                    // 縦方向の斬撃エフェクト
-                    const effectX = centerX + (this.direction === 'left' ? -offset : offset);
-                    ctx.moveTo(effectX, centerY - 90 * (1 - progress));
-                    ctx.lineTo(effectX, centerY + 90 * (1 - progress));
-                    ctx.lineTo(effectX + (this.direction === 'left' ? -30 : 30), centerY);
-                } else {
-                    // 横方向の斬撃エフェクト
-                    const effectY = centerY + (this.direction === 'up' ? -offset : offset);
-                    ctx.moveTo(centerX - 90 * (1 - progress), effectY);
-                    ctx.lineTo(centerX + 90 * (1 - progress), effectY);
-                    ctx.lineTo(centerX, effectY + (this.direction === 'up' ? -30 : 30));
-                }
+                ctx.arc(
+                    15,
+                    -15,
+                    this.attackRange * opacity * 0.5 + i * 3,
+                    -Math.PI / 4,
+                    Math.PI / 2
+                );
                 ctx.stroke();
             }
         }
-
-        // レベル表示
-        ctx.fillStyle = 'white';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Lv.${this.level}`, x + w / 2, y - 5);
 
         ctx.restore();
     }
@@ -277,7 +326,6 @@ export class Player extends GameObject implements IPlayer {
         this.expToNextLevel = Math.floor(this.expToNextLevel * 1.5);
 
         // レベルアップ時の能力上昇
-        this.speed += 0.2;
         this.attackRange += 10;
         this.autoAttackRange += 15;
         this.attackPower += 0.5;

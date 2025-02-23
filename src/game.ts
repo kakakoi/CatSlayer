@@ -4,6 +4,7 @@ import type { Enemy } from './entities/Enemy.js';
 import { Player } from './entities/Player.js';
 import { Spawner } from './entities/Spawner.js';
 import type { GameState, IGame, KeyState, TouchState } from './types.js';
+import { CustomizePanel } from './ui/CustomizePanel.js';
 
 // ゲームクラス
 export class Game implements IGame {
@@ -22,8 +23,22 @@ export class Game implements IGame {
     public stageTime = 60;
     public remainingTime: number = this.stageTime;
     public nextStageStartTime = 0;
-    public touchState: TouchState;
+    public touchState: TouchState = {
+        isMoving: false,
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0,
+        lastTapTime: 0,
+        doubleTapDelay: 300,
+        joystickRadius: 50,
+        joystickBaseX: 0,
+        joystickBaseY: 0,
+    };
     private audioManager: AudioManager;
+    private customizePanel: CustomizePanel;
+    private backgroundCanvas: HTMLCanvasElement;
+    private backgroundCtx: CanvasRenderingContext2D;
 
     constructor() {
         console.log('🐯 CatSlayer Game Starting...');
@@ -39,7 +54,16 @@ export class Game implements IGame {
         }
         this.ctx = ctx;
 
-        this.player = new Player(50, 50);
+        // 背景用のオフスクリーンキャンバスを作成
+        this.backgroundCanvas = document.createElement('canvas');
+        const bgCtx = this.backgroundCanvas.getContext('2d');
+        if (!bgCtx) {
+            throw new Error('Failed to get background 2D context');
+        }
+        this.backgroundCtx = bgCtx;
+
+        // プレイヤーを中央に配置
+        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.audioManager = new AudioManager();
         this.initializeInputs();
         this.setupSpawners();
@@ -55,43 +79,69 @@ export class Game implements IGame {
             lastTapTime: 0,
             doubleTapDelay: 300,
             joystickRadius: 50,
+            joystickBaseX: 100,
+            joystickBaseY: this.canvas.height - 100,
         };
 
-        window.addEventListener('resize', () => this.resize());
+        // カスタマイズパネルの初期化
+        this.customizePanel = new CustomizePanel(
+            this.canvas,
+            this.ctx,
+            (colors) => {
+                // 色の保存とプレイヤーの更新
+                this.player.colors = colors;
+                localStorage.setItem('playerColors', JSON.stringify(colors));
+                this.gameState = 'playing';
+            },
+            () => {
+                this.gameState = 'playing';
+            }
+        );
+
+        // 保存された色の読み込み
+        const savedColors = localStorage.getItem('playerColors');
+        if (savedColors) {
+            this.player.colors = JSON.parse(savedColors);
+        }
+
+        window.addEventListener('resize', () => {
+            this.resize();
+            this.touchState.joystickBaseY = this.canvas.height - 100;
+        });
     }
 
     // スポナーのセットアップを別メソッドに分離
     setupSpawners(): void {
-        // キャンバスの中央を基準に配置
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
-        const offsetX = this.canvas.width * 0.35; // 横方向のオフセット
-        const offsetY = this.canvas.height * 0.35; // 縦方向のオフセット
+        // 画面の四隅にスポナーを配置（マージンを設定）
+        const margin = Math.min(this.canvas.width, this.canvas.height) * 0.1; // 画面サイズの10%をマージンとして使用
 
-        // スポナーをより外側に配置
+        // スポナーを四隅に配置
         this.spawners = [
-            new Spawner(this, centerX - offsetX, centerY - offsetY, 2000), // 左上
-            new Spawner(this, centerX + offsetX, centerY - offsetY, 2000), // 右上
-            new Spawner(this, centerX - offsetX, centerY + offsetY, 2000), // 左下
-            new Spawner(this, centerX + offsetX, centerY + offsetY, 2000), // 右下
+            new Spawner(this, margin, margin, 2000), // 左上
+            new Spawner(this, this.canvas.width - margin - 40, margin, 2000), // 右上
+            new Spawner(this, margin, this.canvas.height - margin - 40, 2000), // 左下
+            new Spawner(
+                this,
+                this.canvas.width - margin - 40,
+                this.canvas.height - margin - 40,
+                2000
+            ), // 右下
         ];
 
-        // スポナーにIDを付与
-        this.spawners.forEach((spawner, index) => {
+        // スポナーにIDを付与と初期設定
+        for (const [index, spawner] of this.spawners.entries()) {
             spawner.id = index;
             spawner.active = false;
             spawner.lastSpawnTime = Date.now() + index * 500; // スポナーごとに時間をずらす
-        });
 
-        // スポナーを段階的に起動
-        this.spawners.forEach((spawner, index) => {
+            // 段階的に起動
             setTimeout(
                 () => {
                     spawner.active = true;
                 },
                 2000 + index * 500
             );
-        });
+        }
     }
 
     // 画面サイズの調整
@@ -126,6 +176,103 @@ export class Game implements IGame {
         this.canvas.style.left = '50%';
         this.canvas.style.top = '50%';
         this.canvas.style.transform = 'translate(-50%, -50%)';
+
+        // スポナーの位置を更新
+        const margin = Math.min(this.canvas.width, this.canvas.height) * 0.1;
+        if (this.spawners.length === 4) {
+            // 左上のスポナー
+            this.spawners[0].x = margin;
+            this.spawners[0].y = margin;
+
+            // 右上のスポナー
+            this.spawners[1].x = this.canvas.width - margin - 40;
+            this.spawners[1].y = margin;
+
+            // 左下のスポナー
+            this.spawners[2].x = margin;
+            this.spawners[2].y = this.canvas.height - margin - 40;
+
+            // 右下のスポナー
+            this.spawners[3].x = this.canvas.width - margin - 40;
+            this.spawners[3].y = this.canvas.height - margin - 40;
+        }
+
+        // 背景キャンバスのサイズも更新
+        this.backgroundCanvas.width = this.canvas.width;
+        this.backgroundCanvas.height = this.canvas.height;
+
+        // 背景を再描画
+        this.drawBackground();
+    }
+
+    // 新しい背景描画メソッド
+    private drawBackground(): void {
+        // 草原のタイルサイズ
+        const tileSize = 32;
+        const rows = Math.ceil(this.backgroundCanvas.height / tileSize);
+        const cols = Math.ceil(this.backgroundCanvas.width / tileSize);
+
+        // 背景色（薄い緑）
+        this.backgroundCtx.fillStyle = '#90EE90';
+        this.backgroundCtx.fillRect(
+            0,
+            0,
+            this.backgroundCanvas.width,
+            this.backgroundCanvas.height
+        );
+
+        // タイルごとに装飾を追加
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * tileSize;
+                const y = row * tileSize;
+
+                // ランダムな装飾（草や花）を追加
+                if (Math.random() < 0.1) {
+                    // 10%の確率で装飾を追加
+                    const decorType = Math.random();
+
+                    if (decorType < 0.6) {
+                        // 60%の確率で草
+                        // 草を描画
+                        this.backgroundCtx.strokeStyle = '#228B22';
+                        this.backgroundCtx.beginPath();
+                        const grassX = x + Math.random() * (tileSize - 10) + 5;
+                        const grassY = y + Math.random() * (tileSize - 10) + 5;
+                        this.backgroundCtx.moveTo(grassX, grassY);
+                        this.backgroundCtx.lineTo(grassX - 3, grassY - 5);
+                        this.backgroundCtx.moveTo(grassX, grassY);
+                        this.backgroundCtx.lineTo(grassX + 3, grassY - 5);
+                        this.backgroundCtx.stroke();
+                    } else {
+                        // 40%の確率で花
+                        // 花を描画
+                        const flowerX = x + Math.random() * (tileSize - 8) + 4;
+                        const flowerY = y + Math.random() * (tileSize - 8) + 4;
+
+                        // 花びら
+                        this.backgroundCtx.fillStyle = Math.random() < 0.5 ? '#FFD700' : '#FFFFFF';
+                        for (let i = 0; i < 4; i++) {
+                            this.backgroundCtx.beginPath();
+                            this.backgroundCtx.arc(
+                                flowerX + Math.cos((i * Math.PI) / 2) * 2,
+                                flowerY + Math.sin((i * Math.PI) / 2) * 2,
+                                2,
+                                0,
+                                Math.PI * 2
+                            );
+                            this.backgroundCtx.fill();
+                        }
+
+                        // 花の中心
+                        this.backgroundCtx.fillStyle = '#FFA500';
+                        this.backgroundCtx.beginPath();
+                        this.backgroundCtx.arc(flowerX, flowerY, 1, 0, Math.PI * 2);
+                        this.backgroundCtx.fill();
+                    }
+                }
+            }
+        }
     }
 
     // 入力処理の初期化を更新
@@ -143,28 +290,27 @@ export class Game implements IGame {
             this.keys[e.key] = false;
         });
 
-        // タッチ状態の初期化を更新
-        this.touchState = {
-            isMoving: false,
-            startX: 0,
-            startY: 0,
-            currentX: 0,
-            currentY: 0,
-            lastTapTime: 0,
-            doubleTapDelay: 300,
-            joystickRadius: 50, // ジョイスティックの移動半径
-        };
-
-        // サウンドボタンの判定を行う共通関数
-        const checkSoundButtonClick = (clientX: number, clientY: number): boolean => {
+        // サウンドボタンの判定を行う共通関数を更新
+        const checkButtonClick = (clientX: number, clientY: number): boolean => {
             const rect = this.canvas.getBoundingClientRect();
             const x = clientX - rect.left;
             const y = clientY - rect.top;
 
-            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
+            // サウンドボタン
+            if (x >= this.canvas.width - 80 && x <= this.canvas.width - 50 && y >= 10 && y <= 40) {
                 this.audioManager.toggleSound();
                 return true;
             }
+
+            // カスタマイズボタン
+            if (x >= this.canvas.width - 40 && x <= this.canvas.width - 10 && y >= 10 && y <= 40) {
+                if (this.gameState === 'playing') {
+                    this.gameState = 'customizing';
+                    this.customizePanel.open();
+                }
+                return true;
+            }
+
             return false;
         };
 
@@ -175,7 +321,16 @@ export class Game implements IGame {
                 return;
             }
 
-            checkSoundButtonClick(e.clientX, e.clientY);
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (this.gameState === 'customizing') {
+                this.customizePanel.handleClick(x, y);
+                return;
+            }
+
+            checkButtonClick(e.clientX, e.clientY);
         });
 
         // タッチ開始時の処理を更新
@@ -188,13 +343,29 @@ export class Game implements IGame {
             }
 
             const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
 
-            // サウンドボタンの判定
-            if (checkSoundButtonClick(touch.clientX, touch.clientY)) {
+            if (this.gameState === 'customizing') {
+                this.customizePanel.handleClick(x, y);
                 return;
             }
 
-            // ダブルタップの判定
+            // サウンドボタンのクリック判定
+            if (checkButtonClick(touch.clientX, touch.clientY)) {
+                return;
+            }
+
+            // ジョイスティックエリアの判定
+            if (this.isInJoystickArea(x, y)) {
+                this.touchState.isMoving = true;
+                this.touchState.currentX = x;
+                this.touchState.currentY = y;
+                return;
+            }
+
+            // ジョイスティック以外の領域のタッチはダブルタップ攻撃として処理
             const currentTime = Date.now();
             if (currentTime - this.touchState.lastTapTime < this.touchState.doubleTapDelay) {
                 if (!this.player.isAttacking) {
@@ -204,16 +375,8 @@ export class Game implements IGame {
                 }
             }
             this.touchState.lastTapTime = currentTime;
-
-            // タッチ開始位置を保存
-            this.touchState.isMoving = true;
-            this.touchState.startX = touch.clientX;
-            this.touchState.startY = touch.clientY;
-            this.touchState.currentX = touch.clientX;
-            this.touchState.currentY = touch.clientY;
         });
 
-        // タッチ移動時の処理を更新
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (!this.touchState.isMoving) return;
@@ -226,12 +389,11 @@ export class Game implements IGame {
             this.touchState.currentX = x;
             this.touchState.currentY = y;
 
-            // ジョイスティックの方向計算
-            const dx = x - this.touchState.startX;
-            const dy = y - this.touchState.startY;
+            // ジョイスティックの方向計算（固定位置基準）
+            const dx = x - this.touchState.joystickBaseX;
+            const dy = y - this.touchState.joystickBaseY;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // 移動方向の正規化と閾値の適用
             if (distance > 10) {
                 // デッドゾーン
                 const normalizedDx = dx / distance;
@@ -275,9 +437,9 @@ export class Game implements IGame {
             return;
         }
 
-        if (this.gameState === 'stageClear') {
-            // ステージクリア中は敵の更新を停止
-            if (Date.now() >= this.nextStageStartTime) {
+        if (this.gameState === 'stageClear' || this.gameState === 'customizing') {
+            // ステージクリアまたはカスタマイズ中は更新を停止
+            if (this.gameState === 'stageClear' && Date.now() >= this.nextStageStartTime) {
                 this.nextStage();
             }
             return;
@@ -414,48 +576,104 @@ export class Game implements IGame {
             this.renderGameOver();
         }
 
-        // サウンドコントロールボタンの描画
+        // カスタマイズ中は一時停止表示
+        if (this.gameState === 'customizing') {
+            // 半透明のオーバーレイ
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // 一時停止表示
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '36px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('⏸ PAUSE', this.canvas.width / 2, 50);
+        }
+
+        // カスタマイズパネルの描画（最前面に表示）
+        if (this.gameState === 'customizing') {
+            this.customizePanel.render();
+        }
+
+        // サウンドとカスタマイズボタンの描画
+        // サウンドボタン
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(this.canvas.width - 40, 10, 30, 30);
+        this.ctx.fillRect(this.canvas.width - 80, 10, 30, 30);
         this.ctx.fillStyle = 'white';
         this.ctx.font = '20px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(
             this.audioManager.getMuteState() ? '🔇' : '🔊',
-            this.canvas.width - 25,
+            this.canvas.width - 65,
             30
         );
 
+        // カスタマイズボタン
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(this.canvas.width - 40, 10, 30, 30);
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText('👤', this.canvas.width - 25, 30);
+
         // 仮想ジョイスティックの描画
-        if (this.touchState.isMoving) {
-            // ジョイスティックの基準円
+        if (this.gameState === 'playing') {
+            // 基準円の描画（外周のみ）
             this.ctx.beginPath();
             this.ctx.arc(
-                this.touchState.startX,
-                this.touchState.startY,
+                this.touchState.joystickBaseX,
+                this.touchState.joystickBaseY,
                 this.touchState.joystickRadius,
                 0,
                 Math.PI * 2
             );
-            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+            this.ctx.lineWidth = 3;
             this.ctx.stroke();
 
-            // スティック部分
-            const dx = this.touchState.currentX - this.touchState.startX;
-            const dy = this.touchState.currentY - this.touchState.startY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = this.touchState.joystickRadius;
+            if (this.touchState.isMoving) {
+                // スティック部分の描画
+                const dx = this.touchState.currentX - this.touchState.joystickBaseX;
+                const dy = this.touchState.currentY - this.touchState.joystickBaseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxDistance = this.touchState.joystickRadius;
 
-            const stickX =
-                this.touchState.startX + (dx / distance) * Math.min(distance, maxDistance);
-            const stickY =
-                this.touchState.startY + (dy / distance) * Math.min(distance, maxDistance);
+                const stickX =
+                    this.touchState.joystickBaseX +
+                    (dx / distance) * Math.min(distance, maxDistance);
+                const stickY =
+                    this.touchState.joystickBaseY +
+                    (dy / distance) * Math.min(distance, maxDistance);
 
-            this.ctx.beginPath();
-            this.ctx.arc(stickX, stickY, 20, 0, Math.PI * 2);
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            this.ctx.fill();
+                // スティックの軌跡を描画
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.touchState.joystickBaseX, this.touchState.joystickBaseY);
+                this.ctx.lineTo(stickX, stickY);
+                this.ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+
+                // 動かしているつまみ部分
+                this.ctx.beginPath();
+                this.ctx.arc(stickX, stickY, 20, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+                this.ctx.fill();
+                this.ctx.strokeStyle = 'rgba(50, 50, 50, 0.8)';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            } else {
+                // 非移動時のみ中心のつまみを表示
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    this.touchState.joystickBaseX,
+                    this.touchState.joystickBaseY,
+                    20,
+                    0,
+                    Math.PI * 2
+                );
+                this.ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
+                this.ctx.fill();
+                this.ctx.strokeStyle = 'rgba(50, 50, 50, 0.5)';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
         }
     }
 
@@ -518,7 +736,8 @@ export class Game implements IGame {
         this.stage = 1;
         this.remainingTime = this.stageTime;
         this.startTime = Date.now();
-        this.player = new Player(50, 50);
+        // プレイヤーを中央に配置
+        this.player = new Player(this.canvas.width / 2, this.canvas.height / 2);
         this.enemies = [];
         this.coins = [];
 
@@ -587,26 +806,10 @@ export class Game implements IGame {
         }
     }
 
-    // drawGridメソッドを追加
+    // drawGridメソッドを更新
     drawGrid(): void {
-        this.ctx.strokeStyle = '#CCCCCC';
-        this.ctx.lineWidth = 0.5;
-
-        // 縦線
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
-
-        // 横線
-        for (let y = 0; y < this.canvas.height; y += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
-        }
+        // 背景キャンバスの内容をメインキャンバスにコピー
+        this.ctx.drawImage(this.backgroundCanvas, 0, 0);
     }
 
     // ステージクリア時の処理を追加
@@ -645,6 +848,34 @@ export class Game implements IGame {
 
         // ステージクリア音を再生
         this.audioManager.playSound('stageClear');
+    }
+
+    // タッチ操作が有効な範囲かどうかを判定
+    private isInJoystickArea(x: number, y: number): boolean {
+        const dx = x - this.touchState.joystickBaseX;
+        const dy = y - this.touchState.joystickBaseY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= this.touchState.joystickRadius * 2; // タッチ有効範囲を半径の2倍に設定
+    }
+
+    // クリックイベントハンドラを更新
+    private handleClick(x: number, y: number): void {
+        if (this.gameState === 'customizing') {
+            this.customizePanel.handleClick(x, y);
+            return;
+        }
+
+        // ... existing click handling code ...
+    }
+
+    // タッチイベントハンドラを更新
+    private handleTouch(x: number, y: number): void {
+        if (this.gameState === 'customizing') {
+            this.customizePanel.handleClick(x, y);
+            return;
+        }
+
+        // ... existing touch handling code ...
     }
 }
 
