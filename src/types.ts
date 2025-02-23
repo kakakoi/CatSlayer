@@ -1,5 +1,5 @@
 // ゲームの状態を表す型
-export type GameState = 'playing' | 'gameover' | 'stageClear';
+export type GameState = 'playing' | 'gameover' | 'stageClear' | 'customizing';
 
 // タッチ状態を表す型
 export interface TouchState {
@@ -11,6 +11,8 @@ export interface TouchState {
     lastTapTime: number;
     doubleTapDelay: number;
     joystickRadius: number;
+    joystickBaseX: number; // 仮想ジョイスティックの固定X座標
+    joystickBaseY: number; // 仮想ジョイスティックの固定Y座標
 }
 
 // キー入力の状態を表す型
@@ -37,6 +39,22 @@ export interface PlayerColors {
     hair: string;
     sword: string;
     shield: string;
+}
+
+// プリセットの型
+export interface PlayerPreset {
+    id: string;
+    name: string;
+    emoji: string;
+    colors: PlayerColors;
+}
+
+// カスタマイズの状態を表す型
+export interface CustomizeState {
+    isOpen: boolean;
+    selectedPreset: string | null;
+    currentColors: PlayerColors;
+    savedPresets: PlayerPreset[];
 }
 
 // ゲームオブジェクトの基本インターフェース

@@ -65,6 +65,8 @@ export class Spawner extends GameObject implements ISpawner {
     spawnEnemy(game: IGame): void {
         const types: EnemyType[] = ['normal', 'fast', 'tank', 'hunter', 'random'];
         const randomType = types[Math.floor(Math.random() * types.length)];
+
+        // スポナーの位置から敵を生成
         const enemy = new Enemy(
             this.x + this.width / 2 - 15,
             this.y + this.height / 2 - 15,
