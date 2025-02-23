@@ -5,6 +5,7 @@ export default defineConfig({
     base: '/CatSlayer/',
     publicDir: 'public',
     server: {
+        host: true,
         port: 3000,
         open: true,
         watch: {
